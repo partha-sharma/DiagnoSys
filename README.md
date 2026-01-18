@@ -1,1 +1,1 @@
-# DiagnoSys
+# DiagnoSys - A web-based system for managing diagnostic lab appointments, tests, and patient reports efficiently.
