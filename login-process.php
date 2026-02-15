@@ -74,5 +74,11 @@ $_SESSION['user_name'] = $user['full_name'];
 $_SESSION['user_email'] = $user['email'];
 $_SESSION['user_role'] = $user['role'];
 
-header('Location: dashboard.php');
+// If the role is 'admin', go to the specific Admin Folder
+if ($user['role'] === 'admin') {
+    header('Location: admin/index.php');
+} else {
+    // Otherwise, go to standard Patient Dashboard
+    header('Location: dashboard.php');
+}
 exit();

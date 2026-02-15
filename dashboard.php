@@ -1,14 +1,18 @@
 <?php
-require 'config/init.php';
+// dashboard.php
 
-requireLogin();
+// This one line does everything: starts session, connects to DB, AND protects the page
+require_once 'config/init.php';
 
+// Protect this page: ONLY PATIENTS ALLOWED. This will handle all redirects.
+protect_patient_page();
+
+// Now that we know we have a logged-in patient, get their details
 $user_id = $_SESSION['user_id'];
 $user_name = $_SESSION['user_name'];
-$user_role = $_SESSION['user_role'];
 
 // Get user's appointments
-$stmt = $conn->prepare("SELECT * FROM appointments WHERE user_id = ? ORDER BY appointment_date DESC");
+$stmt = $conn->prepare("SELECT * FROM appointments WHERE user_id = ? ORDER BY created_at DESC");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $appointments = $stmt->get_result();
