@@ -17,15 +17,31 @@
         <h3 class="form-title">Create Account</h3>
         <p class="form-subtitle">Register as a patient to book tests</p>
 
+        <?php
+        session_start();
+        if (isset($_SESSION['errors'])) {
+            echo '<div class="alert alert-error">';
+            foreach ($_SESSION['errors'] as $error) {
+                echo '<p>• ' . htmlspecialchars($error) . '</p>';
+            }
+            echo '</div>';
+            unset($_SESSION['errors']);
+        }
+        if (isset($_SESSION['success'])) {
+            echo '<div class="alert alert-success">' . htmlspecialchars($_SESSION['success']) . '</div>';
+            unset($_SESSION['success']);
+        }
+        ?>
+
         <form action="register-process.php" method="POST">
             <label>Full Name</label>
-            <input type="text" name="fullname" placeholder="Enter your full name" required>
+            <input type="text" name="fullname" placeholder="Enter your full name" value="<?php echo isset($_SESSION['old_input']['fullname']) ? htmlspecialchars($_SESSION['old_input']['fullname']) : ''; ?>" required>
 
             <label>Email Address</label>
-            <input type="email" name="email" placeholder="Enter your email" required>
+            <input type="email" name="email" placeholder="Enter your email" value="<?php echo isset($_SESSION['old_input']['email']) ? htmlspecialchars($_SESSION['old_input']['email']) : ''; ?>" required>
 
             <label>Phone Number</label>
-            <input type="tel" name="phone" placeholder="Enter your phone number" required>
+            <input type="tel" name="phone" placeholder="Enter your phone number" value="<?php echo isset($_SESSION['old_input']['phone']) ? htmlspecialchars($_SESSION['old_input']['phone']) : ''; ?>" required>
 
             <label>Password</label>
             <input type="password" name="password" placeholder="Create a password" required>
@@ -52,5 +68,11 @@
         </div>
     </div>
 
+<?php
+// Clear old input after displaying
+if (isset($_SESSION['old_input'])) {
+    unset($_SESSION['old_input']);
+}
+?>
 </body>
 </html>
