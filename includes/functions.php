@@ -1,26 +1,13 @@
 <?php
 // includes/functions.php
 
-/**
- * 1. SANITIZE INPUTS
- * Usage: $name = validateInput($_POST['name']);
- * Purpose: Prevents Hackers (XSS/SQL Injection basic)
- */
 function validateInput($dbConn, $input) {
     if($input) {
-        $input = trim($input); // Remove extra spaces
-        $input = stripslashes($input); // Remove backslashes
-        $input = htmlspecialchars($input); // Convert < > to codes
-        return mysqli_real_escape_string($dbConn, $input);
+        return mysqli_real_escape_string($dbConn, htmlspecialchars(trim($input)));
     }
     return "";
 }
 
-/**
- * 2. REDIRECT HELPER
- * Usage: redirect('login.php', 'Login to continue');
- * Purpose: Makes moving between pages easier
- */
 function redirect($url, $message = null) {
     if ($message) {
         $_SESSION['message'] = $message;
@@ -29,28 +16,44 @@ function redirect($url, $message = null) {
     exit(0);
 }
 
-/**
- * 3. CHECK LOGIN STATUS
- * Usage: if(!isLoggedIn()) { redirect('login.php'); }
- */
+// FIX: Checking for 'user_id' instead of 'auth_id' to match friend's code
 function isLoggedIn() {
-    if(isset($_SESSION['auth_id'])) {
+    if(isset($_SESSION['user_id'])) {
         return true;
     } else {
         return false;
     }
 }
 
-/**
- * 4. ALERT MESSAGE DISPLAYER
- * Usage: <?= alertMessage(); ?> in HTML
- */
-function alertMessage() {
-    if(isset($_SESSION['message'])) {
-        echo '<div class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative mb-4" role="alert">
-                <span class="block sm:inline">'.$_SESSION['message'].'</span>
-              </div>';
-        unset($_SESSION['message']); // Clear message after showing
+function requireLogin() {
+    if(!isLoggedIn()){
+        // Save error in the format friend uses
+        $_SESSION['errors'] = ["You must login to continue."];
+        redirect('login.php');
     }
 }
-?> 
+
+function alertMessage() {
+    // Check for Friend's SUCCESS messages
+    if(isset($_SESSION['success'])) {
+        echo '<div style="background:#d4edda; color:#155724; padding:10px; border-radius:5px; margin-bottom:15px;">'.$_SESSION['success'].'</div>';
+        unset($_SESSION['success']);
+    }
+    
+    // Check for Friend's ERROR messages
+    if(isset($_SESSION['errors'])) {
+        echo '<div style="background:#f8d7da; color:#721c24; padding:10px; border-radius:5px; margin-bottom:15px;">';
+        foreach($_SESSION['errors'] as $error) {
+            echo '<p>'.$error.'</p>';
+        }
+        echo '</div>';
+        unset($_SESSION['errors']);
+    }
+
+    // Check for Leader's MESSAGE logic
+    if(isset($_SESSION['message'])) {
+        echo '<div style="background:#cce5ff; color:#004085; padding:10px; border-radius:5px; margin-bottom:15px;">'.$_SESSION['message'].'</div>';
+        unset($_SESSION['message']);
+    }
+}
+?>
