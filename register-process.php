@@ -1,11 +1,7 @@
 <?php
 require 'config/init.php';
 
-// Check if phone column exists, if not add it
-$result = $conn->query("SHOW COLUMNS FROM users LIKE 'phone'");
-if ($result->num_rows == 0) {
-    $conn->query("ALTER TABLE users ADD COLUMN phone VARCHAR(20) AFTER email");
-}
+
 
 // Check if form is submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

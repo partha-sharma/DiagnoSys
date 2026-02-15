@@ -1,11 +1,7 @@
 <?php
 require 'config/init.php';
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
+requireLogin();
 
 $user_id = $_SESSION['user_id'];
 $user_name = $_SESSION['user_name'];
@@ -20,12 +16,14 @@ $stmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - DiagnoLab</title>
     <link rel="stylesheet" href="/DiagnoSys/assets/css/style.css">
 </head>
+
 <body>
 
     <!-- Navbar -->
@@ -94,7 +92,7 @@ $stmt->close();
         <!-- Recent Appointments -->
         <div class="appointments-section">
             <h2>Your Appointments</h2>
-            
+
             <?php if ($appointments->num_rows > 0): ?>
                 <table class="appointments-table">
                     <thead>
@@ -139,5 +137,6 @@ $stmt->close();
     <?php require 'partials/footer.php'; ?>
 
 </body>
+
 </html>
 <?php $conn->close(); ?>
