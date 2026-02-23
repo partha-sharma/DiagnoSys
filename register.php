@@ -43,6 +43,10 @@
             <label>Phone Number</label>
             <input type="tel" name="phone" placeholder="Enter your phone number" value="<?php echo isset($_SESSION['old_input']['phone']) ? htmlspecialchars($_SESSION['old_input']['phone']) : ''; ?>" required>
 
+            <!-- ADDED ADDRESS FIELD PER ERD -->
+            <label>Address</label>
+            <textarea name="address" placeholder="Enter your full address" rows="2" required><?php echo isset($_SESSION['old_input']['address']) ? htmlspecialchars($_SESSION['old_input']['address']) : ''; ?></textarea>
+
             <label>Password</label>
             <input type="password" name="password" placeholder="Create a password" required>
 
@@ -69,7 +73,6 @@
     </div>
 
 <?php
-// Clear old input after displaying
 if (isset($_SESSION['old_input'])) {
     unset($_SESSION['old_input']);
 }

@@ -1,6 +1,17 @@
 <?php
+// config/init.php
 session_start();
-require 'db.php';
-require_once __DIR__ . '/../includes/functions.php'; 
-// __DIR__ ensures the path is always correct
+
+$host = 'localhost';
+$db_name = 'diagnosys_db';
+$username = 'root'; 
+$password = '';    
+
+// Create connection using MySQLi (matches your coding style)
+$conn = new mysqli($host, $username, $password, $db_name);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
 ?>

@@ -1,13 +1,17 @@
 <?php
-// admin/index.php
-
-// This single require points UP one directory to get to the config folder
 require_once '../config/init.php';
 
-// Protect this page: ONLY ADMINS ALLOWED. This handles everything.
-protect_admin_page();
-
-// We don't need any other security checks. The function did it all.
+// 1. MANUAL GATEKEEPER (Stops the bouncing)
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    // If it's a patient trying to be sneaky, send them back to dashboard
+    if (isset($_SESSION['role']) && $_SESSION['role'] === 'patient') {
+        header("Location: ../dashboard.php");
+        exit();
+    }
+    // Otherwise send to login
+    header("Location: ../login.php");
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -15,10 +19,8 @@ protect_admin_page();
 <head>
     <meta charset="UTF-8">
     <title>Admin Dashboard - DiagnoLab</title>
-    <!-- We go up one level (..) to find assets -->
     <link rel="stylesheet" href="../assets/css/style.css">
     <style>
-        /* Temporary simple admin styles */
         .admin-layout { display: flex; height: 100vh; }
         .sidebar { width: 250px; background: #1e293b; color: white; padding: 20px; }
         .sidebar a { display: block; color: #cbd5e1; padding: 10px 0; text-decoration: none; }
@@ -48,11 +50,11 @@ protect_admin_page();
         <div style="margin-top: 30px;">
             <div class="stat-card">
                 <h3>Appointments</h3>
-                <p style="font-size: 24px; font-weight: bold; color: #2563eb;">5 Pending</p>
+                <p style="font-size: 24px; font-weight: bold; color: #2563eb;">0</p>
             </div>
             <div class="stat-card">
                 <h3>Total Patients</h3>
-                <p style="font-size: 24px; font-weight: bold; color: #059669;">12</p>
+                <p style="font-size: 24px; font-weight: bold; color: #059669;">--</p>
             </div>
         </div>
     </div>

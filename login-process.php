@@ -12,34 +12,31 @@ $role = $_POST['role'] ?? 'patient';
 
 $errors = [];
 
-if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    $errors[] = 'Valid email is required';
-}
-
-if (empty($password)) {
-    $errors[] = 'Password is required';
-}
-
-if (!in_array($role, ['patient', 'admin'], true)) {
-    $errors[] = 'Invalid role selected';
-}
+if (empty($email)) $errors[] = 'Email is required';
+if (empty($password)) $errors[] = 'Password is required';
 
 if (!empty($errors)) {
     $_SESSION['errors'] = $errors;
-    $_SESSION['old_input'] = ['email' => $email, 'role' => $role];
     header('Location: login.php');
     exit();
 }
 
-$stmt = $conn->prepare('SELECT id, full_name, email, password, role FROM users WHERE email = ? AND role = ? LIMIT 1');
-$stmt->bind_param('ss', $email, $role);
+// BRANCHING LOGIC: Check different tables based on Role
+if ($role === 'admin') {
+    // Check ADMINS table
+    $sql = "SELECT admin_id, username, email, password FROM admins WHERE email = ? LIMIT 1";
+} else {
+    // Check USERS table
+    $sql = "SELECT user_id, full_name, email, password FROM users WHERE email = ? LIMIT 1";
+}
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param('s', $email);
 $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows === 0) {
-    $_SESSION['errors'] = ['Invalid email or role'];
-    $_SESSION['old_input'] = ['email' => $email, 'role' => $role];
-    $stmt->close();
+    $_SESSION['errors'] = ['Invalid email or role selection'];
     header('Location: login.php');
     exit();
 }
@@ -47,38 +44,28 @@ if ($result->num_rows === 0) {
 $user = $result->fetch_assoc();
 $stmt->close();
 
-$storedPassword = $user['password'];
-$isPasswordValid = false;
+// Password Verification
+if (password_verify($password, $user['password'])) {
+    // Login Success
+    
+    $_SESSION['role'] = $role; // 'admin' or 'patient'
 
-if (password_verify($password, $storedPassword)) {
-    $isPasswordValid = true;
-} elseif (hash_equals($storedPassword, $password)) {
-    $isPasswordValid = true;
-    // Upgrade plain-text password to hashed for security
-    $newHash = password_hash($password, PASSWORD_DEFAULT);
-    $updateStmt = $conn->prepare('UPDATE users SET password = ? WHERE id = ?');
-    $updateStmt->bind_param('si', $newHash, $user['id']);
-    $updateStmt->execute();
-    $updateStmt->close();
-}
+    if ($role === 'admin') {
+        $_SESSION['user_id'] = $user['admin_id'];
+        $_SESSION['user_name'] = $user['username'];
+        $_SESSION['user_email'] = $user['email'];
+        header('Location: admin/index.php');
+    } else {
+        $_SESSION['user_id'] = $user['user_id'];
+        $_SESSION['user_name'] = $user['full_name'];
+        $_SESSION['user_email'] = $user['email'];
+        header('Location: dashboard.php');
+    }
+    exit();
 
-if (!$isPasswordValid) {
+} else {
     $_SESSION['errors'] = ['Invalid password'];
-    $_SESSION['old_input'] = ['email' => $email, 'role' => $role];
     header('Location: login.php');
     exit();
 }
-
-$_SESSION['user_id'] = $user['id'];
-$_SESSION['user_name'] = $user['full_name'];
-$_SESSION['user_email'] = $user['email'];
-$_SESSION['user_role'] = $user['role'];
-
-// If the role is 'admin', go to the specific Admin Folder
-if ($user['role'] === 'admin') {
-    header('Location: admin/index.php');
-} else {
-    // Otherwise, go to standard Patient Dashboard
-    header('Location: dashboard.php');
-}
-exit();
+?>
