@@ -36,10 +36,15 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     <div class="sidebar">
         <h2 style="margin-bottom: 30px;">👨‍⚕️ Admin Panel</h2>
         <a href="index.php">Dashboard</a>
+        <a href="manage_tests.php">Manage Tests</a>
         <a href="appointments.php">Appointments</a>
         <a href="users.php">Patients List</a>
         <hr style="border-color: #334155; margin: 20px 0;">
         <a href="../logout.php" style="color: #fca5a5;">Logout</a>
+
+         
+        
+   
     </div>
 
     <!-- Right Content -->
