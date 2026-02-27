@@ -10,7 +10,13 @@
 
     <div class="auth-box register-box">
         <div class="logo-header">
-            <div class="logo-icon">🧪</div>
+            <div class="logo-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="DiagnoLab logo">
+                    <path d="M6 3h12" />
+                    <path d="M10 3v7l-5 9a2 2 0 0 0 1.76 3h10.48A2 2 0 0 0 19 19l-5-9V3" />
+                    <path d="M8 15h8" />
+                </svg>
+            </div>
             <h2>DiagnoLab</h2>
         </div>
         
