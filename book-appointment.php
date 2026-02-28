@@ -6,6 +6,9 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'patient') {
     header("Location: login.php");
     exit();
 }
+
+// Fetch all 'Active' tests from the database to show in the form
+$tests_result = $conn->query("SELECT * FROM tests WHERE status = 'Active' ORDER BY test_name ASC");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -165,6 +168,47 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'patient') {
             border-left: 3px solid #ef4444;
         }
 
+        .test-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .test-list li {
+            margin-bottom: 10px;
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8fafc;
+            transition: 0.2s;
+        }
+
+        .test-list li:hover {
+            border-color: #0ea5e9;
+            background: #f0f8ff;
+        }
+
+        .test-list label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #334155;
+        }
+
+        .test-list input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #0ea5e9;
+        }
+
+        .test-price {
+            margin-left: auto;
+            font-weight: 600;
+            color: #0ea5e9;
+        }
+
         .info-text {
             background: #f0f8ff;
             padding: 12px;
@@ -201,7 +245,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'patient') {
     <div class="appointment-container">
         <div class="appointment-header">
             <h1>Schedule Your Appointment</h1>
-            <p>Select your preferred date and time</p>
+            <p>Select your desired date, time, and the tests you need.</p>
         </div>
 
         <div class="form-card">
@@ -232,6 +276,21 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'patient') {
                         </p>
                     </div>
                     <input type="hidden" id="appointment_time" name="appointment_time" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Select Tests</label>
+                    <ul class="test-list">
+                        <?php while($test = $tests_result->fetch_assoc()): ?>
+                        <li>
+                            <label>
+                                <input type="checkbox" name="test_ids[]" value="<?php echo $test['test_id']; ?>">
+                                <?php echo htmlspecialchars($test['test_name']); ?>
+                                <span class="test-price">$<?php echo number_format($test['price'], 2); ?></span>
+                            </label>
+                        </li>
+                        <?php endwhile; ?>
+                    </ul>
                 </div>
 
                 <div class="info-text">
