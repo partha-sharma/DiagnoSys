@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/DiagnoSys/assets/css/style.css">
 </head>
 <body>
+
     <!-- Navbar -->
     <nav class="navbar">
         <div class="logo">
