@@ -19,7 +19,20 @@ $result = $conn->query("SELECT * FROM tests ORDER BY test_id DESC");
 </head>
 <body>
 
-<div class="dashboard-container">
+<div class="admin-layout">
+    <!-- Left Sidebar -->
+    <div class="sidebar">
+        <h2 style="margin-bottom: 30px;">&#128105;&#8205;&#9877;&#65039; Admin Panel</h2>
+        <a href="index.php">Dashboard</a>
+        <a href="manage_tests.php" class="active">Manage Tests</a>
+        <a href="appointments.php">Appointments</a>
+        <a href="users.php">Patients List</a>
+        <hr style="border-color: #334155; margin: 20px 0;">
+        <a href="../logout.php" style="color: #fca5a5;">Logout</a>
+    </div>
+
+    <!-- Right Content -->
+    <div class="content">
 
     <!-- Page Header -->
     <div class="manage-tests-header">
@@ -73,8 +86,7 @@ $result = $conn->query("SELECT * FROM tests ORDER BY test_id DESC");
         <?php endif; ?>
     </div>
 
-    <a href="index.php" class="btn-outline">← Back to Dashboard</a>
-
+    </div>
 </div>
 
 <!-- Add Test Modal -->

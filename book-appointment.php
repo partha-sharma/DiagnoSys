@@ -236,9 +236,9 @@ $tests_result = $conn->query("SELECT * FROM tests WHERE status = 'Active' ORDER 
 </head>
 <body>
     <div class="navbar">
-        <div class="logo">DiagnoLab</div>
+        <a href="dashboard.php" class="logo">DiagnoLab</a>
         <div class="nav-buttons">
-            <a href="dashboard.php" class="btn-outline">← Back to Dashboard</a>
+            <a href="dashboard.php" class="btn-outline">Dashboard</a>
         </div>
     </div>
 
@@ -286,7 +286,7 @@ $tests_result = $conn->query("SELECT * FROM tests WHERE status = 'Active' ORDER 
                             <label>
                                 <input type="checkbox" name="test_ids[]" value="<?php echo $test['test_id']; ?>">
                                 <?php echo htmlspecialchars($test['test_name']); ?>
-                                <span class="test-price">$<?php echo number_format($test['price'], 2); ?></span>
+                                <span class="test-price">৳<?php echo number_format($test['price'], 2); ?></span>
                             </label>
                         </li>
                         <?php endwhile; ?>
