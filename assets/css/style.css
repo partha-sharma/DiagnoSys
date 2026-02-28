@@ -24,6 +24,12 @@ body {
     font-size: 24px;
     font-weight: bold;
     color: #0ea5e9;
+    text-decoration: none;
+    cursor: default;
+}
+
+a.logo {
+    cursor: pointer;
 }
 
 .hero-icon {
@@ -64,6 +70,7 @@ body {
     border: none;
     cursor: pointer;
     font-size: 14px;
+    text-decoration: none;
 }
 
 .btn-primary:hover {
@@ -104,6 +111,7 @@ body {
 .hero-buttons a {
     margin: 10px;
     display: inline-block;
+    text-decoration: none;
 }
 
 /* Features */
@@ -144,6 +152,90 @@ body {
 
 .card p {
     color: #64748b;
+}
+
+/* Test Prices Section */
+.test-prices {
+    padding: 60px 20px;
+    text-align: center;
+    background: #fff;
+}
+
+.test-prices h2 {
+    font-size: 32px;
+    color: #0f172a;
+    margin-bottom: 10px;
+}
+
+.test-prices > p {
+    color: #64748b;
+    margin-bottom: 40px;
+}
+
+.test-prices-nav {
+    max-width: 1200px;
+    margin: 0 auto 20px;
+    text-align: left;
+}
+
+.price-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.price-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 30px 24px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.price-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.price-card-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+}
+
+.price-card h3 {
+    font-size: 18px;
+    color: #0f172a;
+    margin-bottom: 8px;
+}
+
+.price-desc {
+    color: #64748b;
+    font-size: 13px;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+.price-tag {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0ea5e9;
+    margin-bottom: 20px;
+}
+
+.price-card .btn-primary {
+    padding: 8px 24px;
+    font-size: 13px;
+    border-radius: 8px;
+    text-decoration: none;
+}
+
+.no-tests {
+    color: #94a3b8;
+    font-size: 16px;
+    grid-column: 1 / -1;
 }
 
 /* Steps */
@@ -395,6 +487,42 @@ body {
 .terms-checkbox a:hover {
     text-decoration: underline;
 }
+
+/* Password Visibility Toggle */
+.password-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.password-wrapper input {
+    margin-bottom: 0 !important;
+    padding-right: 44px;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    background-color: transparent;
+    border: none;
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+    color: #94a3b8;
+    transition: color 0.2s;
+    padding: 0;
+}
+
+.toggle-password:hover {
+    color: #0ea5e9;
+}
 /* Alert Messages */
 .alert {
     padding: 15px;
@@ -511,24 +639,36 @@ body {
 .appointments-table {
     width: 100%;
     border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .appointments-table thead {
-    background: #f1f5f9;
+    background: #f8fafc;
 }
 
 .appointments-table th {
-    padding: 12px;
+    padding: 12px 16px;
     text-align: left;
+    font-size: 13px;
+    color: #64748b;
     font-weight: 600;
-    color: #475569;
-    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .appointments-table td {
-    padding: 12px;
-    border-bottom: 1px solid #e2e8f0;
+    padding: 14px 16px;
+    font-size: 14px;
     color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.appointments-table tbody tr:hover {
+    background: #f8fafc;
 }
 
 .appointments-table tr:last-child td {
@@ -597,8 +737,13 @@ body {
 .manage-tests-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     margin-bottom: 30px;
+}
+
+.manage-tests-header .header-text {
+    text-align: center;
+    flex: 1;
 }
 
 .manage-tests-header .header-text h1 {
@@ -611,6 +756,32 @@ body {
 .manage-tests-header .header-text p {
     color: #64748b;
     font-size: 14px;
+}
+
+/* Back to Dashboard Button */
+.btn-back-dashboard {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #f1f5f9;
+    color: #475569;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+}
+
+.btn-back-dashboard:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+
+.btn-back-dashboard svg {
+    flex-shrink: 0;
 }
 
 /* Tests card grid */
@@ -1044,4 +1215,142 @@ body {
         padding: 12px 20px;
         font-size: 15px;
     }
+}
+
+/* ===================== */
+/* Admin Layout          */
+/* ===================== */
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 250px;
+    background: #1e293b;
+    color: white;
+    padding: 20px;
+}
+
+.sidebar a {
+    display: block;
+    color: #cbd5e1;
+    padding: 10px 0;
+    text-decoration: none;
+}
+
+.sidebar a:hover {
+    color: white;
+}
+
+.sidebar a.active {
+    color: white;
+    font-weight: 600;
+}
+
+.content {
+    flex: 1;
+    padding: 40px;
+    background: #f1f5f9;
+    overflow-x: auto;
+}
+
+.content h1 {
+    margin-bottom: 5px;
+    color: #0f172a;
+}
+
+.content > p {
+    color: #64748b;
+    margin-bottom: 25px;
+}
+
+/* Admin Upload Button */
+.btn-upload {
+    display: inline-block;
+    padding: 6px 14px;
+    background: #0ea5e9;
+    color: white;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-upload:hover {
+    background: #0284c7;
+}
+
+/* ===================== */
+/* Upload Form           */
+/* ===================== */
+.upload-container {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.upload-container h1 {
+    font-size: 22px;
+    color: #0f172a;
+    margin-bottom: 5px;
+}
+
+.upload-container > p {
+    color: #64748b;
+    font-size: 14px;
+    margin-bottom: 25px;
+}
+
+.upload-card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.file-input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 2px dashed #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #334155;
+    background: #f8fafc;
+    cursor: pointer;
+}
+
+.file-input:hover {
+    border-color: #0ea5e9;
+    background: #f0f8ff;
+}
+
+.file-hint {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 6px;
+}
+
+.btn-upload.btn-upload-full {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+.btn-back {
+    display: inline-block;
+    margin-top: 15px;
+    color: #0ea5e9;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.btn-back:hover {
+    text-decoration: underline;
 }
