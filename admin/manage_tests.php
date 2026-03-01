@@ -16,19 +16,20 @@ $result = $conn->query("SELECT * FROM tests ORDER BY test_id DESC");
     <meta charset="UTF-8">
     <title>Manage Tests - Admin</title>
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
 
 <div class="admin-layout">
     <!-- Left Sidebar -->
     <div class="sidebar">
-        <h2 style="margin-bottom: 30px;">&#128105;&#8205;&#9877;&#65039; Admin Panel</h2>
+        <h2 style="margin-bottom: 30px;">Admin Panel</h2>
         <a href="index.php">Dashboard</a>
         <a href="manage_tests.php" class="active">Manage Tests</a>
         <a href="appointments.php">Appointments</a>
         <a href="users.php">Patients List</a>
         <hr style="border-color: #334155; margin: 20px 0;">
-        <a href="../logout.php" style="color: #fca5a5;">Logout</a>
+        <a href="../logout.php" class="sidebar-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
     </div>
 
     <!-- Right Content -->
@@ -52,13 +53,13 @@ $result = $conn->query("SELECT * FROM tests ORDER BY test_id DESC");
         ?>
         <div class="test-card">
             <div class="test-card-top">
-                <div class="test-card-icon">🧪</div>
+                <div class="test-card-icon"><i class="fa-solid fa-flask" style="font-size: 28px;"></i></div>
                 <div class="test-card-actions">
                     <a href="tests-process.php?action=delete&id=<?php echo $test['test_id']; ?>"
                        class="delete-btn"
                        title="Delete"
                        onclick="return confirm('Are you sure you want to delete this test?');">
-                       🗑️
+                       <i class="fa-solid fa-trash-can" style="font-size: 16px;"></i>
                     </a>
                 </div>
             </div>

@@ -9,6 +9,7 @@ $tests = $conn->query("SELECT test_name, description, price FROM tests WHERE sta
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Test Prices - DiagnoLab</title>
     <link rel="stylesheet" href="/DiagnoSys/assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
 
@@ -40,7 +41,7 @@ $tests = $conn->query("SELECT test_name, description, price FROM tests WHERE sta
             <?php if ($tests && $tests->num_rows > 0): ?>
                 <?php while ($test = $tests->fetch_assoc()): ?>
                 <div class="price-card">
-                    <div class="price-card-icon">🧪</div>
+                    <div class="price-card-icon"><i class="fa-solid fa-flask" style="font-size: 28px;"></i></div>
                     <h3><?php echo htmlspecialchars($test['test_name']); ?></h3>
                     <p class="price-desc"><?php echo htmlspecialchars($test['description']); ?></p>
                     <div class="price-tag">৳<?php echo number_format($test['price'], 0); ?></div>
