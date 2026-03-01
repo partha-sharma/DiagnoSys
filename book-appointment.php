@@ -231,6 +231,14 @@ $tests_result = $conn->query("SELECT * FROM tests WHERE status = 'Active' ORDER 
             .time-slots {
                 grid-template-columns: repeat(4, 1fr);
             }
+
+            .coupon-input-group {
+                flex-direction: column;
+            }
+
+            .btn-apply {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -284,7 +292,14 @@ $tests_result = $conn->query("SELECT * FROM tests WHERE status = 'Active' ORDER 
                         <?php while($test = $tests_result->fetch_assoc()): ?>
                         <li>
                             <label>
-                                <input type="checkbox" name="test_ids[]" value="<?php echo $test['test_id']; ?>">
+                                <input 
+                                    type="checkbox" 
+                                    name="test_ids[]" 
+                                    value="<?php echo $test['test_id']; ?>"
+                                    data-test-name="<?php echo htmlspecialchars($test['test_name']); ?>"
+                                    data-test-price="<?php echo $test['price']; ?>"
+                                    class="test-checkbox"
+                                >
                                 <?php echo htmlspecialchars($test['test_name']); ?>
                                 <span class="test-price">৳<?php echo number_format($test['price'], 2); ?></span>
                             </label>
@@ -293,13 +308,63 @@ $tests_result = $conn->query("SELECT * FROM tests WHERE status = 'Active' ORDER 
                     </ul>
                 </div>
 
+                <!-- Cart Summary -->
+                <div class="cart-summary">
+                    <div class="cart-header">📋 Order Summary</div>
+                    
+                    <div id="cartContent">
+                        <div class="cart-empty">
+                            Select tests to see your order summary
+                        </div>
+                    </div>
+
+                    <div id="cartItems" style="display: none;">
+                        <ul class="cart-items" id="selectedTestsList"></ul>
+                        
+                        <div class="cart-totals">
+                            <div class="cart-row subtotal">
+                                <span>Subtotal:</span>
+                                <span id="subtotalAmount">৳0.00</span>
+                            </div>
+                            <div class="cart-row discount" id="discountRow" style="display: none;">
+                                <span id="discountLabel">Discount:</span>
+                                <span id="discountAmount">৳0.00</span>
+                            </div>
+                            <div class="cart-row total">
+                                <span>Total:</span>
+                                <span id="totalAmount">৳0.00</span>
+                            </div>
+                        </div>
+
+                        <!-- Coupon Section -->
+                        <div class="coupon-section">
+                            <label class="coupon-label">Have a coupon code?</label>
+                            <div class="coupon-input-group">
+                                <input 
+                                    type="text" 
+                                    id="couponCode" 
+                                    class="coupon-input" 
+                                    placeholder="Enter coupon code"
+                                    maxlength="20"
+                                >
+                                <button type="button" class="btn-apply" id="applyCouponBtn">
+                                    Apply
+                                </button>
+                            </div>
+                            <div class="coupon-message" id="couponMessage"></div>
+                            <input type="hidden" name="coupon_code" id="appliedCouponCode">
+                            <input type="hidden" name="discount_amount" id="appliedDiscountAmount" value="0">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="info-text">
                     <strong>Working Hours:</strong> 9:00 AM - 5:00 PM (Monday to Saturday)
                 </div>
 
                 <div class="button-group">
                     <button type="submit" class="btn-primary" id="submitBtn" disabled>
-                        Book Appointment
+                        Proceed to Payment
                     </button>
                     <a href="dashboard.php" class="btn-secondary">Cancel</a>
                 </div>
