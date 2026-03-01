@@ -30,12 +30,15 @@ if ($usersResult) {
     <meta charset="UTF-8">
     <title>Patients List - DiagnoLab</title>
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         .admin-layout { display: flex; height: 100vh; }
         .sidebar { width: 250px; background: #1e293b; color: white; padding: 20px; overflow-y: auto; }
         .sidebar a { display: block; color: #cbd5e1; padding: 10px 0; text-decoration: none; }
         .sidebar a:hover { color: white; }
         .sidebar a.active { color: white; font-weight: bold; }
+        .sidebar .sidebar-logout { display: flex; align-items: center; gap: 8px; color: #fca5a5; padding: 10px 16px; border-radius: 8px; border: 1px solid rgba(252, 165, 165, 0.25); transition: all 0.2s ease; margin-top: 8px; font-size: 14px; }
+        .sidebar .sidebar-logout:hover { background: rgba(239, 68, 68, 0.15); color: #fecaca; border-color: rgba(252, 165, 165, 0.4); }
         .content { flex: 1; padding: 40px; background: #f1f5f9; overflow-y: auto; }
         .table-container { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         table { width: 100%; border-collapse: collapse; }
@@ -51,13 +54,13 @@ if ($usersResult) {
 <div class="admin-layout">
     <!-- Left Sidebar -->
     <div class="sidebar">
-        <h2 style="margin-bottom: 30px;">👨‍⚕️ Admin Panel</h2>
+        <h2 style="margin-bottom: 30px;">Admin Panel</h2>
         <a href="index.php">Dashboard</a>
         <a href="manage_tests.php">Manage Tests</a>
         <a href="appointments.php">Appointments</a>
         <a href="users.php" class="active">Patients List</a>
         <hr style="border-color: #334155; margin: 20px 0;">
-        <a href="../logout.php" style="color: #fca5a5;">Logout</a>
+        <a href="../logout.php" class="sidebar-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
     </div>
 
     <!-- Right Content -->

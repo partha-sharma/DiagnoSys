@@ -98,7 +98,7 @@ $pendingReports = $pendingData['count'];
         <a href="appointments.php">Appointments</a>
         <a href="users.php">Patients List</a>
         <hr style="border-color: #334155; margin: 20px 0;">
-        <a href="../logout.php" style="color: #fca5a5;">Logout</a>
+        <a href="../logout.php" class="sidebar-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
 
          
         

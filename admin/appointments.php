@@ -28,19 +28,20 @@ $all_appointments = $conn->query($sql);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Appointments - DiagnoLab</title>
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
 
 <div class="admin-layout">
     <!-- Left Sidebar -->
     <div class="sidebar">
-        <h2 style="margin-bottom: 30px;">&#128105;&#8205;&#9877;&#65039; Admin Panel</h2>
+        <h2 style="margin-bottom: 30px;">Admin Panel</h2>
         <a href="index.php">Dashboard</a>
         <a href="manage_tests.php">Manage Tests</a>
         <a href="appointments.php" class="active">Appointments</a>
         <a href="users.php">Patients List</a>
         <hr style="border-color: #334155; margin: 20px 0;">
-        <a href="../logout.php" style="color: #fca5a5;">Logout</a>
+        <a href="../logout.php" class="sidebar-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
     </div>
 
     <!-- Right Content -->

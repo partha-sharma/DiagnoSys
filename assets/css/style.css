@@ -1283,6 +1283,29 @@ a.logo {
     font-weight: 600;
 }
 
+.sidebar-logout {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    color: #fca5a5 !important;
+    padding: 10px 16px !important;
+    border-radius: 8px;
+    border: 1px solid rgba(252, 165, 165, 0.25);
+    transition: all 0.2s ease;
+    margin-top: 8px;
+    font-size: 14px;
+}
+
+.sidebar-logout:hover {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #fecaca !important;
+    border-color: rgba(252, 165, 165, 0.4);
+}
+
+.sidebar-logout i {
+    font-size: 15px;
+}
+
 .content {
     flex: 1;
     padding: 40px;
