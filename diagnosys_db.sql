@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 28, 2026 at 10:02 AM
+-- Generation Time: Mar 01, 2026 at 07:18 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -53,6 +53,9 @@ CREATE TABLE `appointments` (
   `user_id` int(11) NOT NULL,
   `appointment_date` datetime NOT NULL,
   `status` enum('Pending','Confirmed','Completed','Cancelled') DEFAULT 'Pending',
+  `coupon_code` varchar(20) DEFAULT NULL,
+  `discount_amount` decimal(10,2) DEFAULT 0.00,
+  `total_amount` decimal(10,2) DEFAULT 0.00,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -60,9 +63,12 @@ CREATE TABLE `appointments` (
 -- Dumping data for table `appointments`
 --
 
-INSERT INTO `appointments` (`appointment_id`, `user_id`, `appointment_date`, `status`, `created_at`) VALUES
-(1, 2, '2026-02-05 05:08:00', 'Pending', '2026-02-27 13:32:31'),
-(2, 2, '0000-00-00 00:00:00', 'Pending', '2026-02-27 14:15:14');
+INSERT INTO `appointments` (`appointment_id`, `user_id`, `appointment_date`, `status`, `coupon_code`, `discount_amount`, `total_amount`, `created_at`) VALUES
+(1, 2, '2026-02-05 05:08:00', 'Pending', NULL, 0.00, 0.00, '2026-02-27 13:32:31'),
+(2, 2, '0000-00-00 00:00:00', 'Pending', NULL, 0.00, 0.00, '2026-02-27 14:15:14'),
+(3, 2, '2026-05-05 10:30:00', 'Pending', NULL, 0.00, 0.00, '2026-02-28 09:41:32'),
+(4, 4, '2026-04-04 09:00:00', 'Pending', NULL, 0.00, 0.00, '2026-03-01 13:49:41'),
+(5, 4, '2026-03-03 10:00:00', 'Pending', '', 0.00, 60.00, '2026-03-01 17:24:58');
 
 -- --------------------------------------------------------
 
@@ -88,6 +94,50 @@ CREATE TABLE `appointment_tests` (
   `appointment_id` int(11) NOT NULL,
   `test_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `appointment_tests`
+--
+
+INSERT INTO `appointment_tests` (`appointment_test_id`, `appointment_id`, `test_id`) VALUES
+(1, 3, 1),
+(2, 3, 4),
+(3, 4, 1),
+(4, 4, 4),
+(5, 5, 1),
+(6, 5, 4);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `coupons`
+--
+
+CREATE TABLE `coupons` (
+  `coupon_id` int(11) NOT NULL,
+  `code` varchar(20) NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `discount_type` enum('percentage','fixed') NOT NULL,
+  `discount_value` decimal(10,2) NOT NULL,
+  `min_amount` decimal(10,2) DEFAULT 0.00,
+  `max_discount` decimal(10,2) DEFAULT NULL,
+  `usage_limit` int(11) DEFAULT NULL,
+  `used_count` int(11) DEFAULT 0,
+  `valid_from` date DEFAULT NULL,
+  `valid_until` date DEFAULT NULL,
+  `status` enum('Active','Inactive') DEFAULT 'Active',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `coupons`
+--
+
+INSERT INTO `coupons` (`coupon_id`, `code`, `description`, `discount_type`, `discount_value`, `min_amount`, `max_discount`, `usage_limit`, `used_count`, `valid_from`, `valid_until`, `status`, `created_at`) VALUES
+(1, 'SAVE10', '10% discount on all tests', 'percentage', 10.00, 0.00, NULL, NULL, 0, NULL, NULL, 'Active', '2026-03-01 15:28:55'),
+(2, 'SAVE50', 'Flat ৳50 off', 'fixed', 50.00, 100.00, NULL, NULL, 0, NULL, NULL, 'Active', '2026-03-01 15:28:55'),
+(3, 'HEALTH20', '20% discount for health checkup', 'percentage', 20.00, 200.00, NULL, NULL, 0, NULL, NULL, 'Active', '2026-03-01 15:28:55'),
+(4, 'FIRST100', 'First time customer - ৳100 off', 'fixed', 100.00, 150.00, NULL, NULL, 0, NULL, NULL, 'Active', '2026-03-01 15:28:55');
 
 -- --------------------------------------------------------
 
@@ -151,7 +201,8 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`user_id`, `full_name`, `email`, `password`, `phone`, `address`, `created_at`) VALUES
 (1, 'ok', 'leader@test.com', '$2y$10$tfM6.8950sr1YXSqtCSwZuDQAd9uQaR6oUyar1PSXr9aR2HcaAxtO', '1234567890', 'asa', '2026-02-23 20:47:12'),
 (2, 'captain leader', 'okok@gmail.com', '$2y$10$J1r4LVykrESe2fwuFtWEqeyZ43.5.99D20N/gipgmy5WiTtIrRdmu', '121', '121223d', '2026-02-23 21:12:17'),
-(3, 'captain leader', 'faa@gmail.com', '$2y$10$gcBxdnns2UNpVP.zvvBN6.F0DeB5SaXcJSfcSS3uD5aw02ypWTzei', '1212', '1212', '2026-02-23 21:12:52');
+(3, 'captain leader', 'faa@gmail.com', '$2y$10$gcBxdnns2UNpVP.zvvBN6.F0DeB5SaXcJSfcSS3uD5aw02ypWTzei', '1212', '1212', '2026-02-23 21:12:52'),
+(4, 'okok', 'ok@gmail.com', '$2y$10$qznIatwDQsbNnJ5B22n77uK3HKRbtpnbk3xFFcesAr6.kkaWKHIlS', '0124597864', 'abcd', '2026-03-01 13:20:38');
 
 --
 -- Indexes for dumped tables
@@ -185,6 +236,13 @@ ALTER TABLE `appointment_tests`
   ADD PRIMARY KEY (`appointment_test_id`),
   ADD KEY `appointment_id` (`appointment_id`),
   ADD KEY `test_id` (`test_id`);
+
+--
+-- Indexes for table `coupons`
+--
+ALTER TABLE `coupons`
+  ADD PRIMARY KEY (`coupon_id`),
+  ADD UNIQUE KEY `code` (`code`);
 
 --
 -- Indexes for table `tests`
@@ -221,7 +279,7 @@ ALTER TABLE `admins`
 -- AUTO_INCREMENT for table `appointments`
 --
 ALTER TABLE `appointments`
-  MODIFY `appointment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `appointment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `appointment_history`
@@ -233,7 +291,13 @@ ALTER TABLE `appointment_history`
 -- AUTO_INCREMENT for table `appointment_tests`
 --
 ALTER TABLE `appointment_tests`
-  MODIFY `appointment_test_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `appointment_test_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT for table `coupons`
+--
+ALTER TABLE `coupons`
+  MODIFY `coupon_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `tests`
@@ -251,7 +315,7 @@ ALTER TABLE `test_results`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- Constraints for dumped tables
