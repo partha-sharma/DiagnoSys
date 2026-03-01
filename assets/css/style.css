@@ -1354,3 +1354,145 @@ a.logo {
 .btn-back:hover {
     text-decoration: underline;
 }
+
+/* Cart Summary & Checkout */
+.cart-summary {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 25px;
+}
+
+.cart-header {
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.cart-items {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 15px 0;
+}
+
+.cart-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 14px;
+    color: #334155;
+}
+
+.cart-empty {
+    text-align: center;
+    padding: 20px;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.cart-totals {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 15px;
+    margin-top: 15px;
+}
+
+.cart-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 14px;
+}
+
+.cart-row.subtotal {
+    color: #64748b;
+}
+
+.cart-row.discount {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.cart-row.total {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    padding-top: 10px;
+    border-top: 2px solid #e2e8f0;
+    margin-top: 8px;
+}
+
+/* Coupon Section */
+.coupon-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.coupon-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 8px;
+}
+
+.coupon-input-group {
+    display: flex;
+    gap: 10px;
+}
+
+.coupon-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+.btn-apply {
+    padding: 10px 20px;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn-apply:hover {
+    background: #059669;
+}
+
+.btn-apply:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.coupon-message {
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    display: none;
+}
+
+.coupon-message.success {
+    display: block;
+    background: #d1fae5;
+    color: #065f46;
+    border-left: 3px solid #10b981;
+}
+
+.coupon-message.error {
+    display: block;
+    background: #fee2e2;
+    color: #991b1b;
+    border-left: 3px solid #ef4444;
+}
