@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - DiagnoLab</title>
     <link rel="stylesheet" href="/DiagnoSys/assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body class="auth-body">
 
     <div class="auth-box register-box">
         <div class="logo-header">
-            <div class="logo-icon">🧪</div>
+            <div class="logo-icon"><i class="fa-solid fa-flask" style="font-size: 28px;"></i></div>
             <h2>DiagnoLab</h2>
         </div>
         
