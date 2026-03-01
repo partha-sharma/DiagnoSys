@@ -434,6 +434,235 @@ $tests_result = $conn->query("SELECT * FROM tests WHERE status = 'Active' ORDER 
                 timeSlotsContainer.appendChild(btn);
             });
         });
+
+        // Cart functionality
+        const testCheckboxes = document.querySelectorAll('.test-checkbox');
+        const cartContent = document.getElementById('cartContent');
+        const cartItems = document.getElementById('cartItems');
+        const selectedTestsList = document.getElementById('selectedTestsList');
+        const subtotalAmount = document.getElementById('subtotalAmount');
+        const discountRow = document.getElementById('discountRow');
+        const discountLabel = document.getElementById('discountLabel');
+        const discountAmount = document.getElementById('discountAmount');
+        const totalAmount = document.getElementById('totalAmount');
+        const couponInput = document.getElementById('couponCode');
+        const applyCouponBtn = document.getElementById('applyCouponBtn');
+        const couponMessage = document.getElementById('couponMessage');
+        const appliedCouponCode = document.getElementById('appliedCouponCode');
+        const appliedDiscountAmount = document.getElementById('appliedDiscountAmount');
+
+        let selectedTests = [];
+        let appliedCoupon = null;
+
+        function updateCart() {
+            selectedTests = [];
+            
+            testCheckboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    selectedTests.push({
+                        id: checkbox.value,
+                        name: checkbox.dataset.testName,
+                        price: parseFloat(checkbox.dataset.testPrice)
+                    });
+                }
+            });
+
+            if (selectedTests.length === 0) {
+                cartContent.style.display = 'block';
+                cartItems.style.display = 'none';
+                // Reset coupon if no tests selected
+                if (appliedCoupon) {
+                    removeCoupon();
+                }
+                return;
+            }
+
+            cartContent.style.display = 'none';
+            cartItems.style.display = 'block';
+
+            // Update cart list
+            selectedTestsList.innerHTML = '';
+            selectedTests.forEach(test => {
+                const li = document.createElement('li');
+                li.className = 'cart-item';
+                li.innerHTML = `
+                    <span>${test.name}</span>
+                    <span>৳${test.price.toFixed(2)}</span>
+                `;
+                selectedTestsList.appendChild(li);
+            });
+
+            // Recalculate discount if coupon is applied
+            if (appliedCoupon) {
+                recalculateCouponDiscount();
+            } else {
+                calculateTotals();
+            }
+        }
+
+        function recalculateCouponDiscount() {
+            const subtotal = selectedTests.reduce((sum, test) => sum + test.price, 0);
+            let discount = 0;
+
+            if (appliedCoupon.type === 'percentage') {
+                discount = (subtotal * appliedCoupon.value) / 100;
+            } else {
+                discount = appliedCoupon.value;
+            }
+
+            // Ensure discount doesn't exceed subtotal
+            discount = Math.min(discount, subtotal);
+            appliedCoupon.discount = discount;
+
+            calculateTotals();
+        }
+
+        function calculateTotals() {
+            const subtotal = selectedTests.reduce((sum, test) => sum + test.price, 0);
+            let discount = 0;
+
+            if (appliedCoupon) {
+                discount = appliedCoupon.discount;
+                console.log('Calculating totals - Subtotal:', subtotal, 'Discount:', discount, 'Applied Coupon:', appliedCoupon);
+            }
+
+            const total = Math.max(0, subtotal - discount);
+
+            subtotalAmount.textContent = `৳${subtotal.toFixed(2)}`;
+            
+            if (discount > 0) {
+                discountRow.style.display = 'flex';
+                discountLabel.textContent = `Discount (${appliedCoupon.description}):`;
+                discountAmount.textContent = `-৳${discount.toFixed(2)}`;
+                appliedDiscountAmount.value = discount.toFixed(2);
+            } else {
+                discountRow.style.display = 'none';
+                appliedDiscountAmount.value = '0';
+            }
+
+            totalAmount.textContent = `৳${total.toFixed(2)}`;
+            console.log('Final - Subtotal:', subtotal, 'Discount:', discount, 'Total:', total);
+        }
+
+        function applyCoupon() {
+            console.log('=== applyCoupon() called ===');
+            const code = couponInput.value.trim().toUpperCase();
+            console.log('Coupon code entered:', code);
+            console.log('Selected tests:', selectedTests);
+            
+            if (!code) {
+                console.log('No code entered');
+                showCouponMessage('Please enter a coupon code', 'error');
+                return;
+            }
+
+            if (selectedTests.length === 0) {
+                console.log('No tests selected');
+                showCouponMessage('Please select tests first', 'error');
+                return;
+            }
+
+            const subtotal = selectedTests.reduce((sum, test) => sum + test.price, 0);
+            console.log('Subtotal for validation:', subtotal);
+
+            // Disable button during validation
+            applyCouponBtn.disabled = true;
+            applyCouponBtn.textContent = 'Validating...';
+
+            console.log('Sending fetch request to validate-coupon.php');
+
+            // Validate coupon with backend
+            fetch('validate-coupon.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `code=${encodeURIComponent(code)}&subtotal=${subtotal}`
+            })
+            .then(response => {
+                console.log('Response received:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Coupon validation response:', data);
+                if (data.success) {
+                    appliedCoupon = {
+                        code: code,
+                        type: data.type,
+                        value: parseFloat(data.value),
+                        discount: parseFloat(data.discount),
+                        description: data.description
+                    };
+                    appliedCouponCode.value = code;
+                    showCouponMessage(data.message + ' ' + data.description, 'success');
+                    couponInput.disabled = true;
+                    applyCouponBtn.textContent = 'Remove';
+                    applyCouponBtn.disabled = false;
+                    console.log('Applied coupon:', appliedCoupon);
+                    calculateTotals();
+                } else {
+                    console.log('Coupon validation failed:', data.message);
+                    showCouponMessage(data.message, 'error');
+                    applyCouponBtn.disabled = false;
+                    applyCouponBtn.textContent = 'Apply';
+                }
+            })
+            .catch(error => {
+                console.error('Coupon validation error:', error);
+                showCouponMessage('Error validating coupon. Please try again.', 'error');
+                applyCouponBtn.disabled = false;
+                applyCouponBtn.textContent = 'Apply';
+            });
+        }
+
+        function removeCoupon() {
+            appliedCoupon = null;
+            appliedCouponCode.value = '';
+            couponInput.value = '';
+            couponInput.disabled = false;
+            applyCouponBtn.textContent = 'Apply';
+            couponMessage.style.display = 'none';
+            couponMessage.className = 'coupon-message';
+            calculateTotals();
+        }
+
+        function showCouponMessage(message, type) {
+            couponMessage.textContent = message;
+            couponMessage.className = `coupon-message ${type}`;
+        }
+
+        // Event listeners
+        testCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateCart);
+        });
+
+        applyCouponBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Apply button clicked! Button text:', this.textContent);
+            if (this.textContent.trim() === 'Apply') {
+                console.log('Calling applyCoupon()');
+                applyCoupon();
+            } else {
+                console.log('Calling removeCoupon()');
+                removeCoupon();
+            }
+        });
+
+        couponInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (applyCouponBtn.textContent.trim() === 'Apply') {
+                    applyCoupon();
+                }
+            }
+        });
+
+        // Initial cart update
+        updateCart();
+        
+        console.log('Cart system initialized');
+        console.log('Test checkboxes found:', testCheckboxes.length);
+        console.log('Apply button:', applyCouponBtn);
     </script>
 </body>
 </html>
