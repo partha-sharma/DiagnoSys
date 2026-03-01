@@ -11,6 +11,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $appointment_date = $_POST['appointment_date'];
     $appointment_time = $_POST['appointment_time'];
     $test_ids = $_POST['test_ids'] ?? []; // Get array of selected tests
+    $coupon_code = $_POST['coupon_code'] ?? '';
+    $discount_amount = floatval($_POST['discount_amount'] ?? 0);
 
     // Validation
     if (empty($appointment_date) || empty($appointment_time) || empty($test_ids)) {
@@ -19,6 +21,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
+    // Calculate total amount
+    $test_ids_str = implode(',', array_map('intval', $test_ids));
+    $tests_query = $conn->query("SELECT SUM(price) as total FROM tests WHERE test_id IN ($test_ids_str)");
+    $total_row = $tests_query->fetch_assoc();
+    $subtotal = $total_row['total'] ?? 0;
+    $total_amount = max(0, $subtotal - $discount_amount);
+
     // Combine date and time into a single datetime string
     $appointment_datetime = $appointment_date . ' ' . $appointment_time . ':00';
 
@@ -26,9 +35,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $conn->begin_transaction();
 
     try {
+        // Check if coupon columns exist in appointments table
+        $check_columns = $conn->query("SHOW COLUMNS FROM appointments LIKE 'coupon_code'");
+        $has_coupon_columns = ($check_columns && $check_columns->num_rows > 0);
+
         // 1. Create the main appointment record
-        $stmt = $conn->prepare("INSERT INTO appointments (user_id, appointment_date) VALUES (?, ?)");
-        $stmt->bind_param("is", $user_id, $appointment_datetime);
+        if ($has_coupon_columns) {
+            $stmt = $conn->prepare("INSERT INTO appointments (user_id, appointment_date, coupon_code, discount_amount, total_amount) VALUES (?, ?, ?, ?, ?)");
+            $stmt->bind_param("issdd", $user_id, $appointment_datetime, $coupon_code, $discount_amount, $total_amount);
+        } else {
+            // Fallback to original structure if columns don't exist
+            $stmt = $conn->prepare("INSERT INTO appointments (user_id, appointment_date) VALUES (?, ?)");
+            $stmt->bind_param("is", $user_id, $appointment_datetime);
+        }
         $stmt->execute();
 
         // 2. Get the ID of the appointment we just created

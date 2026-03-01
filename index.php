@@ -28,7 +28,7 @@
         <p>Book diagnostic tests online, access reports securely, and manage your health records with ease.</p>
         <div class="hero-buttons">
             <a href="book-test.php" class="btn-primary">Book Test Now</a>
-            <a href="login.php" class="btn-outline">Login to Your Account</a>
+            <a href="test-prices.php" class="btn-outline">View Test Prices</a>
         </div>
     </section>
 
