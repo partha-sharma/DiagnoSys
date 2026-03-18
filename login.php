@@ -24,6 +24,27 @@ session_start();
             echo '</div>';
             unset($_SESSION['errors']);
         }
+
+        if (isset($_SESSION['success'])) {
+            echo '<div class="alert alert-success">' . htmlspecialchars($_SESSION['success']) . '</div>';
+            unset($_SESSION['success']);
+        }
+
+        if (isset($_SESSION['verify_link'])) {
+            echo '<div class="alert alert-success">'
+                . 'Verification link (local testing): '
+                . '<a href="' . htmlspecialchars($_SESSION['verify_link']) . '">Verify Email</a>'
+                . '</div>';
+            unset($_SESSION['verify_link']);
+        }
+
+        if (isset($_SESSION['reset_link'])) {
+            echo '<div class="alert alert-success">'
+                . 'Password reset link (local testing): '
+                . '<a href="' . htmlspecialchars($_SESSION['reset_link']) . '">Open Reset Page</a>'
+                . '</div>';
+            unset($_SESSION['reset_link']);
+        }
         ?>
 
         <form action="login-process.php" method="POST">
@@ -52,6 +73,14 @@ session_start();
 
             <button type="submit" class="btn-primary full">Login</button>
         </form>
+
+        <?php if (isset($_SESSION['pending_verify_email'])): ?>
+            <form action="resend-verification.php" method="POST" class="resend-form">
+                <input type="hidden" name="email" value="<?php echo htmlspecialchars($_SESSION['pending_verify_email']); ?>">
+                <button type="submit" class="btn-outline full">Resend Verification Link</button>
+            </form>
+            <?php unset($_SESSION['pending_verify_email']); ?>
+        <?php endif; ?>
 
         <div class="footer-text">
             Don't have an account? <a href="register.php">Register here</a>
