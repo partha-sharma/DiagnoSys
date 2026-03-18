@@ -31,16 +31,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (empty($errors)) {
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        $email_token = bin2hex(random_bytes(32));
+        $email_token_expiry = date('Y-m-d H:i:s', strtotime('+1 day'));
         
-        // INSERT into users (Removed 'role', added 'address')
-        $stmt = $conn->prepare("INSERT INTO users (full_name, email, phone, address, password) VALUES (?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssss", $fullname, $email, $phone, $address, $hashed_password);
+        // Create user as unverified and save a verification token.
+        $stmt = $conn->prepare("INSERT INTO users (full_name, email, phone, address, password, email_verified, email_token, email_token_expiry) VALUES (?, ?, ?, ?, ?, 0, ?, ?)");
+        $stmt->bind_param("sssssss", $fullname, $email, $phone, $address, $hashed_password, $email_token, $email_token_expiry);
         
         if ($stmt->execute()) {
-            $_SESSION['success'] = "Account created! Please Login.";
+            $verify_link = "http://localhost/DiagnoSys/verify-email.php?token=" . urlencode($email_token);
+            $_SESSION['success'] = "Account created! Please verify your email before login.";
+            $_SESSION['verify_link'] = $verify_link;
             $stmt->close();
             $conn->close();
-            header("Location: login.php"); // Redirect to login, not dashboard
+            header("Location: register.php");
             exit();
         } else {
             $errors[] = "Registration failed: " . $conn->error;

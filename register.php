@@ -32,6 +32,14 @@
             echo '<div class="alert alert-success">' . htmlspecialchars($_SESSION['success']) . '</div>';
             unset($_SESSION['success']);
         }
+
+        if (isset($_SESSION['verify_link'])) {
+            echo '<div class="alert alert-success">'
+                . 'Verification link (local testing): '
+                . '<a href="' . htmlspecialchars($_SESSION['verify_link']) . '">Verify Now</a>'
+                . '</div>';
+            unset($_SESSION['verify_link']);
+        }
         ?>
 
         <form action="register-process.php" method="POST">
