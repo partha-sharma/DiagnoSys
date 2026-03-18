@@ -9,6 +9,8 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'patient') {
 
 // Fetch all 'Active' tests from the database to show in the form
 $tests_result = $conn->query("SELECT * FROM tests WHERE status = 'Active' ORDER BY test_name ASC");
+$packages_result = $conn->query("SELECT package_id, name, description, final_price FROM packages WHERE status = 'Active' ORDER BY name ASC");
+$technicians_result = $conn->query("SELECT technician_id, name, specialization FROM technicians WHERE status = 'Active' ORDER BY name ASC");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -61,7 +63,22 @@ $tests_result = $conn->query("SELECT * FROM tests WHERE status = 'Active' ORDER 
                                 Select a date first
                             </p>
                         </div>
+                        <small id="slotInfoText" style="display:block; margin-top:8px; color:#64748b;"></small>
                         <input type="hidden" id="appointment_time" name="appointment_time" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Select Package (Optional)</label>
+                        <select name="package_id" class="form-input" id="packageSelect">
+                            <option value="">No package selected</option>
+                            <?php if ($packages_result): ?>
+                                <?php while($package = $packages_result->fetch_assoc()): ?>
+                                    <option value="<?php echo (int)$package['package_id']; ?>">
+                                        <?php echo htmlspecialchars($package['name']); ?> (৳<?php echo number_format((float)$package['final_price'], 2); ?>)
+                                    </option>
+                                <?php endwhile; ?>
+                            <?php endif; ?>
+                        </select>
                     </div>
 
                     <div class="form-group">
@@ -88,6 +105,39 @@ $tests_result = $conn->query("SELECT * FROM tests WHERE status = 'Active' ORDER 
 
                     <div class="info-text">
                         <strong>Working Hours:</strong> 9:00 AM - 5:00 PM (Monday to Saturday)
+                    </div>
+
+                    <div class="form-group" style="margin-top: 18px;">
+                        <label class="form-label">Home Sample Collection</label>
+                        <label style="display:flex; align-items:center; gap:8px; margin-bottom:10px; color:#334155;">
+                            <input type="checkbox" id="isHomeCollection" name="is_home_collection" value="1">
+                            Choose home sample collection
+                        </label>
+
+                        <div id="homeCollectionFields" style="display:none;">
+                            <input type="text" name="collection_address" class="form-input" placeholder="Collection address">
+                            <input type="datetime-local" name="collection_time" class="form-input" style="margin-top:10px;">
+                            <input type="number" step="0.01" name="collection_charge" id="collectionChargeInput" class="form-input" placeholder="Extra charge (e.g. 100)" value="100" style="margin-top:10px;">
+                            <select name="assigned_technician_id" class="form-input" style="margin-top:10px;">
+                                <option value="">Assign technician (optional)</option>
+                                <?php if ($technicians_result): ?>
+                                    <?php while($tech = $technicians_result->fetch_assoc()): ?>
+                                        <option value="<?php echo (int)$tech['technician_id']; ?>">
+                                            <?php echo htmlspecialchars($tech['name']); ?><?php echo !empty($tech['specialization']) ? ' - ' . htmlspecialchars($tech['specialization']) : ''; ?>
+                                        </option>
+                                    <?php endwhile; ?>
+                                <?php endif; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 16px;">
+                        <label class="form-label">Doctor Referral (Optional)</label>
+                        <input type="text" name="doctor_name" class="form-input" placeholder="Doctor name">
+                        <input type="text" name="doctor_hospital" class="form-input" placeholder="Hospital/Clinic" style="margin-top:10px;">
+                        <input type="text" name="doctor_specialty" class="form-input" placeholder="Specialty" style="margin-top:10px;">
+                        <input type="text" name="doctor_contact" class="form-input" placeholder="Contact number" style="margin-top:10px;">
+                        <textarea name="referral_notes" class="form-input" placeholder="Referral notes" style="margin-top:10px; min-height:90px;"></textarea>
                     </div>
 
                     <div class="button-group">
@@ -157,8 +207,7 @@ $tests_result = $conn->query("SELECT * FROM tests WHERE status = 'Active' ORDER 
         const timeSlotsContainer = document.getElementById('timeSlotsContainer');
         const submitBtn = document.getElementById('submitBtn');
 
-        // Time slots
-        const timeSlots = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00'];
+        const slotInfoText = document.getElementById('slotInfoText');
 
         // Set min date to today
         const today = new Date();
@@ -181,10 +230,24 @@ $tests_result = $conn->query("SELECT * FROM tests WHERE status = 'Active' ORDER 
             if (!this.value) return;
 
             timeSlotsContainer.innerHTML = '';
+            timeInput.value = '';
+            submitBtn.disabled = true;
             const selectedDate = new Date(this.value);
             const isToday = selectedDate.toDateString() === today.toDateString();
 
-            timeSlots.forEach(slot => {
+            fetch(`get-available-slots.php?date=${encodeURIComponent(this.value)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success || !Array.isArray(data.slots) || data.slots.length === 0) {
+                    slotInfoText.textContent = 'No configured slots found for this date. Contact admin.';
+                    return;
+                }
+
+                data.slots.forEach(slotRow => {
+                    const slot = slotRow.time;
+                    const available = Number(slotRow.available || 0);
+                    const status = String(slotRow.status || 'Available');
+
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.textContent = formatTime(slot);
@@ -200,17 +263,29 @@ $tests_result = $conn->query("SELECT * FROM tests WHERE status = 'Active' ORDER 
                     }
                 }
 
+                if (status !== 'Available' || available <= 0) {
+                    btn.disabled = true;
+                    btn.title = 'Slot unavailable';
+                } else {
+                    btn.title = `${available} seats left`;
+                }
+
                 btn.addEventListener('click', function(e) {
                     e.preventDefault();
                     if (!this.disabled) {
                         document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
                         this.classList.add('selected');
                         timeInput.value = this.dataset.time;
-                        submitBtn.disabled = false;
+                        submitBtn.disabled = selectedTests.length === 0;
+                        slotInfoText.textContent = this.title;
                     }
                 });
 
                 timeSlotsContainer.appendChild(btn);
+                });
+            })
+            .catch(() => {
+                slotInfoText.textContent = 'Could not fetch live slot availability.';
             });
         });
 
@@ -229,6 +304,9 @@ $tests_result = $conn->query("SELECT * FROM tests WHERE status = 'Active' ORDER 
         const couponMessage = document.getElementById('couponMessage');
         const appliedCouponCode = document.getElementById('appliedCouponCode');
         const appliedDiscountAmount = document.getElementById('appliedDiscountAmount');
+        const isHomeCollection = document.getElementById('isHomeCollection');
+        const homeCollectionFields = document.getElementById('homeCollectionFields');
+        const collectionChargeInput = document.getElementById('collectionChargeInput');
 
         let selectedTests = [];
         let appliedCoupon = null;
@@ -249,6 +327,7 @@ $tests_result = $conn->query("SELECT * FROM tests WHERE status = 'Active' ORDER 
             if (selectedTests.length === 0) {
                 cartContent.style.display = 'block';
                 cartItems.style.display = 'none';
+                submitBtn.disabled = true;
                 // Reset coupon if no tests selected
                 if (appliedCoupon) {
                     removeCoupon();
@@ -258,6 +337,7 @@ $tests_result = $conn->query("SELECT * FROM tests WHERE status = 'Active' ORDER 
 
             cartContent.style.display = 'none';
             cartItems.style.display = 'block';
+            submitBtn.disabled = !timeInput.value;
 
             // Update cart list
             selectedTestsList.innerHTML = '';
@@ -299,13 +379,18 @@ $tests_result = $conn->query("SELECT * FROM tests WHERE status = 'Active' ORDER 
         function calculateTotals() {
             const subtotal = selectedTests.reduce((sum, test) => sum + test.price, 0);
             let discount = 0;
+            let collectionCharge = 0;
 
             if (appliedCoupon) {
                 discount = appliedCoupon.discount;
                 console.log('Calculating totals - Subtotal:', subtotal, 'Discount:', discount, 'Applied Coupon:', appliedCoupon);
             }
 
-            const total = Math.max(0, subtotal - discount);
+            if (isHomeCollection && isHomeCollection.checked) {
+                collectionCharge = parseFloat(collectionChargeInput?.value || 0);
+            }
+
+            const total = Math.max(0, subtotal - discount + collectionCharge);
 
             subtotalAmount.textContent = `৳${subtotal.toFixed(2)}`;
             
@@ -320,7 +405,7 @@ $tests_result = $conn->query("SELECT * FROM tests WHERE status = 'Active' ORDER 
             }
 
             totalAmount.textContent = `৳${total.toFixed(2)}`;
-            console.log('Final - Subtotal:', subtotal, 'Discount:', discount, 'Total:', total);
+            console.log('Final - Subtotal:', subtotal, 'Discount:', discount, 'Collection:', collectionCharge, 'Total:', total);
         }
 
         function applyCoupon() {
@@ -414,6 +499,17 @@ $tests_result = $conn->query("SELECT * FROM tests WHERE status = 'Active' ORDER 
         testCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', updateCart);
         });
+
+        if (isHomeCollection) {
+            isHomeCollection.addEventListener('change', function() {
+                homeCollectionFields.style.display = this.checked ? 'block' : 'none';
+                calculateTotals();
+            });
+        }
+
+        if (collectionChargeInput) {
+            collectionChargeInput.addEventListener('input', calculateTotals);
+        }
 
         applyCouponBtn.addEventListener('click', function(e) {
             e.preventDefault();

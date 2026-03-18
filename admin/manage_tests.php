@@ -27,6 +27,8 @@ $result = $conn->query("SELECT * FROM tests ORDER BY test_id DESC");
         <a href="index.php">Dashboard</a>
         <a href="manage_tests.php" class="active">Manage Tests</a>
         <a href="appointments.php">Appointments</a>
+        <a href="technicians.php">Technicians</a>
+        <a href="packages.php">Packages</a>
         <a href="users.php">Patients List</a>
         <hr style="border-color: #334155; margin: 20px 0;">
         <a href="../logout.php" class="sidebar-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
