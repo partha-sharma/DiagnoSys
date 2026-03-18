@@ -27,7 +27,7 @@ if ($role === 'admin') {
     $sql = "SELECT admin_id, username, email, password FROM admins WHERE email = ? LIMIT 1";
 } else {
     // Check USERS table
-    $sql = "SELECT user_id, full_name, email, password FROM users WHERE email = ? LIMIT 1";
+    $sql = "SELECT user_id, full_name, email, password, email_verified FROM users WHERE email = ? LIMIT 1";
 }
 
 $stmt = $conn->prepare($sql);
@@ -46,6 +46,14 @@ $stmt->close();
 
 // Password Verification
 if (password_verify($password, $user['password'])) {
+    if ($role === 'patient' && (int)$user['email_verified'] !== 1) {
+        $_SESSION['errors'] = ['Please verify your email before logging in.'];
+        $_SESSION['pending_verify_email'] = $email;
+        $_SESSION['old_input'] = ['email' => $email, 'role' => $role];
+        header('Location: login.php');
+        exit();
+    }
+
     // Login Success
     
     $_SESSION['role'] = $role; // 'admin' or 'patient'

@@ -53,6 +53,13 @@ CREATE TABLE `appointments` (
   `user_id` int(11) NOT NULL,
   `appointment_date` datetime NOT NULL,
   `status` enum('Pending','Confirmed','Completed','Cancelled') DEFAULT 'Pending',
+  `cancellation_reason` text DEFAULT NULL,
+  `sample_status` enum('Pending','Collected','Processing','Report Ready','Completed') DEFAULT 'Pending',
+  `assigned_technician_id` int(11) DEFAULT NULL,
+  `is_home_collection` tinyint(1) DEFAULT 0,
+  `collection_address` text DEFAULT NULL,
+  `collection_time` datetime DEFAULT NULL,
+  `collection_charge` decimal(10,2) DEFAULT 0.00,
   `coupon_code` varchar(20) DEFAULT NULL,
   `discount_amount` decimal(10,2) DEFAULT 0.00,
   `total_amount` decimal(10,2) DEFAULT 0.00,
@@ -188,10 +195,172 @@ CREATE TABLE `users` (
   `user_id` int(11) NOT NULL,
   `full_name` varchar(100) NOT NULL,
   `email` varchar(100) NOT NULL,
+  `email_verified` tinyint(1) DEFAULT 0,
+  `email_token` varchar(255) DEFAULT NULL,
+  `email_token_expiry` datetime DEFAULT NULL,
+  `reset_token` varchar(255) DEFAULT NULL,
+  `reset_expiry` datetime DEFAULT NULL,
+  `profile_photo` varchar(255) DEFAULT NULL,
   `password` varchar(255) NOT NULL,
   `phone` varchar(20) DEFAULT NULL,
   `address` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `appointment_notes`
+--
+
+CREATE TABLE `appointment_notes` (
+  `note_id` int(11) NOT NULL,
+  `appointment_id` int(11) NOT NULL,
+  `admin_id` int(11) NOT NULL,
+  `note_text` text NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `reviews`
+--
+
+CREATE TABLE `reviews` (
+  `review_id` int(11) NOT NULL,
+  `appointment_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `rating` tinyint(4) NOT NULL,
+  `comment` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `payments`
+--
+
+CREATE TABLE `payments` (
+  `payment_id` int(11) NOT NULL,
+  `appointment_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `status` enum('Pending','Processing','Completed','Failed','Refunded') DEFAULT 'Pending',
+  `payment_method` varchar(50) DEFAULT NULL,
+  `transaction_id` varchar(100) DEFAULT NULL,
+  `payment_date` datetime DEFAULT NULL,
+  `refund_amount` decimal(10,2) DEFAULT 0.00,
+  `refund_reason` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `technicians`
+--
+
+CREATE TABLE `technicians` (
+  `technician_id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `phone` varchar(20) NOT NULL,
+  `specialization` varchar(100) DEFAULT NULL,
+  `status` enum('Active','Inactive') DEFAULT 'Active',
+  `assigned_appointments` int(11) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `sample_tracking`
+--
+
+CREATE TABLE `sample_tracking` (
+  `tracking_id` int(11) NOT NULL,
+  `appointment_id` int(11) NOT NULL,
+  `status` enum('Pending','Collected','Processing','Report Ready','Completed') DEFAULT 'Pending',
+  `collected_by` int(11) DEFAULT NULL,
+  `collected_at` datetime DEFAULT NULL,
+  `processing_started_at` datetime DEFAULT NULL,
+  `report_ready_at` datetime DEFAULT NULL,
+  `completed_at` datetime DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `doctor_referrals`
+--
+
+CREATE TABLE `doctor_referrals` (
+  `referral_id` int(11) NOT NULL,
+  `appointment_id` int(11) NOT NULL,
+  `doctor_name` varchar(100) NOT NULL,
+  `hospital` varchar(100) DEFAULT NULL,
+  `specialty` varchar(100) DEFAULT NULL,
+  `contact_number` varchar(20) DEFAULT NULL,
+  `referral_notes` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `packages`
+--
+
+CREATE TABLE `packages` (
+  `package_id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `description` text DEFAULT NULL,
+  `base_price` decimal(10,2) NOT NULL,
+  `discount_percent` decimal(5,2) DEFAULT 0.00,
+  `final_price` decimal(10,2) NOT NULL,
+  `status` enum('Active','Inactive') DEFAULT 'Active',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `package_tests`
+--
+
+CREATE TABLE `package_tests` (
+  `package_test_id` int(11) NOT NULL,
+  `package_id` int(11) NOT NULL,
+  `test_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `appointment_slots`
+--
+
+CREATE TABLE `appointment_slots` (
+  `slot_id` int(11) NOT NULL,
+  `slot_date` date NOT NULL,
+  `slot_time` time NOT NULL,
+  `time_period` varchar(20) DEFAULT NULL,
+  `max_capacity` int(11) DEFAULT 5,
+  `booked_count` int(11) DEFAULT 0,
+  `status` enum('Available','Booked','Unavailable','Closed') DEFAULT 'Available',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -220,7 +389,10 @@ ALTER TABLE `admins`
 --
 ALTER TABLE `appointments`
   ADD PRIMARY KEY (`appointment_id`),
-  ADD KEY `user_id` (`user_id`);
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `idx_sample_status` (`sample_status`),
+  ADD KEY `idx_assigned_technician` (`assigned_technician_id`),
+  ADD KEY `idx_appointment_date` (`appointment_date`);
 
 --
 -- Indexes for table `appointment_history`
@@ -263,7 +435,92 @@ ALTER TABLE `test_results`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`user_id`),
-  ADD UNIQUE KEY `email` (`email`);
+  ADD UNIQUE KEY `email` (`email`),
+  ADD KEY `idx_email_token` (`email_token`),
+  ADD KEY `idx_reset_token` (`reset_token`);
+
+--
+-- Indexes for table `appointment_notes`
+--
+ALTER TABLE `appointment_notes`
+  ADD PRIMARY KEY (`note_id`),
+  ADD KEY `idx_appointment_id` (`appointment_id`),
+  ADD KEY `idx_admin_id` (`admin_id`),
+  ADD KEY `idx_created_at` (`created_at`);
+
+--
+-- Indexes for table `reviews`
+--
+ALTER TABLE `reviews`
+  ADD PRIMARY KEY (`review_id`),
+  ADD UNIQUE KEY `appointment_id` (`appointment_id`),
+  ADD KEY `idx_user_id` (`user_id`),
+  ADD KEY `idx_rating` (`rating`),
+  ADD KEY `idx_created_at` (`created_at`);
+
+--
+-- Indexes for table `payments`
+--
+ALTER TABLE `payments`
+  ADD PRIMARY KEY (`payment_id`),
+  ADD KEY `idx_appointment_id` (`appointment_id`),
+  ADD KEY `idx_user_id` (`user_id`),
+  ADD KEY `idx_status` (`status`),
+  ADD KEY `idx_transaction_id` (`transaction_id`),
+  ADD KEY `idx_payment_date` (`payment_date`);
+
+--
+-- Indexes for table `technicians`
+--
+ALTER TABLE `technicians`
+  ADD PRIMARY KEY (`technician_id`),
+  ADD UNIQUE KEY `email` (`email`),
+  ADD KEY `idx_status` (`status`),
+  ADD KEY `idx_specialization` (`specialization`);
+
+--
+-- Indexes for table `sample_tracking`
+--
+ALTER TABLE `sample_tracking`
+  ADD PRIMARY KEY (`tracking_id`),
+  ADD UNIQUE KEY `appointment_id` (`appointment_id`),
+  ADD KEY `idx_status` (`status`),
+  ADD KEY `idx_collected_by` (`collected_by`),
+  ADD KEY `idx_updated_at` (`updated_at`);
+
+--
+-- Indexes for table `doctor_referrals`
+--
+ALTER TABLE `doctor_referrals`
+  ADD PRIMARY KEY (`referral_id`),
+  ADD KEY `idx_appointment_id` (`appointment_id`),
+  ADD KEY `idx_doctor_name` (`doctor_name`),
+  ADD KEY `idx_specialty` (`specialty`);
+
+--
+-- Indexes for table `packages`
+--
+ALTER TABLE `packages`
+  ADD PRIMARY KEY (`package_id`),
+  ADD UNIQUE KEY `name` (`name`),
+  ADD KEY `idx_status` (`status`);
+
+--
+-- Indexes for table `package_tests`
+--
+ALTER TABLE `package_tests`
+  ADD PRIMARY KEY (`package_test_id`),
+  ADD UNIQUE KEY `unique_package_test` (`package_id`,`test_id`),
+  ADD KEY `idx_test_id` (`test_id`);
+
+--
+-- Indexes for table `appointment_slots`
+--
+ALTER TABLE `appointment_slots`
+  ADD PRIMARY KEY (`slot_id`),
+  ADD UNIQUE KEY `unique_slot` (`slot_date`,`slot_time`),
+  ADD KEY `idx_status` (`status`),
+  ADD KEY `idx_slot_date_time` (`slot_date`,`slot_time`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -318,6 +575,60 @@ ALTER TABLE `users`
   MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
+-- AUTO_INCREMENT for table `appointment_notes`
+--
+ALTER TABLE `appointment_notes`
+  MODIFY `note_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `reviews`
+--
+ALTER TABLE `reviews`
+  MODIFY `review_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `payments`
+--
+ALTER TABLE `payments`
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `technicians`
+--
+ALTER TABLE `technicians`
+  MODIFY `technician_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `sample_tracking`
+--
+ALTER TABLE `sample_tracking`
+  MODIFY `tracking_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `doctor_referrals`
+--
+ALTER TABLE `doctor_referrals`
+  MODIFY `referral_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `packages`
+--
+ALTER TABLE `packages`
+  MODIFY `package_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `package_tests`
+--
+ALTER TABLE `package_tests`
+  MODIFY `package_test_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `appointment_slots`
+--
+ALTER TABLE `appointment_slots`
+  MODIFY `slot_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- Constraints for dumped tables
 --
 
@@ -325,7 +636,8 @@ ALTER TABLE `users`
 -- Constraints for table `appointments`
 --
 ALTER TABLE `appointments`
-  ADD CONSTRAINT `appointments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `appointments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `appointments_ibfk_technician` FOREIGN KEY (`assigned_technician_id`) REFERENCES `technicians` (`technician_id`) ON DELETE SET NULL;
 
 --
 -- Constraints for table `appointment_history`
@@ -346,6 +658,47 @@ ALTER TABLE `appointment_tests`
 ALTER TABLE `test_results`
   ADD CONSTRAINT `test_results_ibfk_1` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`appointment_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `test_results_ibfk_2` FOREIGN KEY (`admin_id`) REFERENCES `admins` (`admin_id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `appointment_notes`
+--
+ALTER TABLE `appointment_notes`
+  ADD CONSTRAINT `appointment_notes_ibfk_1` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`appointment_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `appointment_notes_ibfk_2` FOREIGN KEY (`admin_id`) REFERENCES `admins` (`admin_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `reviews`
+--
+ALTER TABLE `reviews`
+  ADD CONSTRAINT `reviews_ibfk_1` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`appointment_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `reviews_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `payments`
+--
+ALTER TABLE `payments`
+  ADD CONSTRAINT `payments_ibfk_1` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`appointment_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `payments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `sample_tracking`
+--
+ALTER TABLE `sample_tracking`
+  ADD CONSTRAINT `sample_tracking_ibfk_1` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`appointment_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `sample_tracking_ibfk_2` FOREIGN KEY (`collected_by`) REFERENCES `technicians` (`technician_id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `doctor_referrals`
+--
+ALTER TABLE `doctor_referrals`
+  ADD CONSTRAINT `doctor_referrals_ibfk_1` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`appointment_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `package_tests`
+--
+ALTER TABLE `package_tests`
+  ADD CONSTRAINT `package_tests_ibfk_1` FOREIGN KEY (`package_id`) REFERENCES `packages` (`package_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `package_tests_ibfk_2` FOREIGN KEY (`test_id`) REFERENCES `tests` (`test_id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
