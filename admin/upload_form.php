@@ -37,6 +37,8 @@ if ($appointment_id <= 0) {
         <a href="index.php">Dashboard</a>
         <a href="manage_tests.php">Manage Tests</a>
         <a href="appointments.php" class="active">Appointments</a>
+            <a href="manage_rooms.php">Manage Rooms</a>
+        <a href="finance.php">Finance</a>
         <a href="users.php">Patients List</a>
         <hr style="border-color: #334155; margin: 20px 0;">
         <a href="../logout.php" class="sidebar-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>

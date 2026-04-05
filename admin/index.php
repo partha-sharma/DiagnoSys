@@ -42,6 +42,21 @@ $pendingQuery = "SELECT COUNT(DISTINCT a.appointment_id) as count FROM appointme
 $pendingResult = mysqli_query($conn, $pendingQuery);
 $pendingData = mysqli_fetch_assoc($pendingResult);
 $pendingReports = $pendingData['count'];
+
+// Fetch payment overview for dashboard finance preview
+$paidTotalQuery = "SELECT COALESCE(SUM(amount), 0) AS paid_total FROM payments WHERE status = 'Completed'";
+$paidTotalResult = mysqli_query($conn, $paidTotalQuery);
+$paidTotalData = mysqli_fetch_assoc($paidTotalResult);
+$paidTotal = $paidTotalData['paid_total'] ?? 0;
+
+$recentPaymentsSql = "SELECT p.payment_id, p.appointment_id, p.amount, p.status, p.payment_method,
+                             COALESCE(p.payment_date, p.created_at) AS paid_at,
+                             u.full_name
+                      FROM payments p
+                      INNER JOIN users u ON p.user_id = u.user_id
+                      ORDER BY COALESCE(p.payment_date, p.created_at) DESC
+                      LIMIT 8";
+$recentPaymentsResult = mysqli_query($conn, $recentPaymentsSql);
 ?>
 
 <!DOCTYPE html>
@@ -98,6 +113,8 @@ $pendingReports = $pendingData['count'];
         <a href="appointments.php">Appointments</a>
         <a href="technicians.php">Technicians</a>
         <a href="packages.php">Packages</a>
+        <a href="manage_rooms.php">Manage Rooms</a>
+        <a href="finance.php">Finance</a>
         <a href="users.php">Patients List</a>
         <hr style="border-color: #334155; margin: 20px 0;">
         <a href="../logout.php" class="sidebar-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
@@ -173,6 +190,67 @@ $pendingReports = $pendingData['count'];
                     <p class="subtext">↗ Active appointments</p>
                 </div>
             </div>
+
+            <div class="stat-card">
+                <div class="stat-icon icon-green">
+                    <i class="fas fa-money-bill-wave" style="font-size: 2.5rem; color: #059669;"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Collected Payments</h3>
+                    <div class="number">৳<?php echo number_format((float)$paidTotal, 0); ?></div>
+                    <p class="subtext">Completed finance records</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="appointments-section" style="margin-top: 24px; background: #fff; border-radius: 12px; padding: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+                <h2 style="margin:0;">Recent Patient Payments</h2>
+                <a href="finance.php" class="btn-outline" style="text-decoration:none;">Open Finance</a>
+            </div>
+
+            <?php if ($recentPaymentsResult && $recentPaymentsResult->num_rows > 0): ?>
+                <div style="overflow-x:auto;">
+                    <table class="appointments-table">
+                        <thead>
+                            <tr>
+                                <th>Payment</th>
+                                <th>Patient</th>
+                                <th>Appointment</th>
+                                <th>Amount</th>
+                                <th>Method</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php while ($payment = mysqli_fetch_assoc($recentPaymentsResult)): ?>
+                                <?php
+                                    $statusClass = 'status-pending';
+                                    if ($payment['status'] === 'Completed') {
+                                        $statusClass = 'status-completed';
+                                    } elseif ($payment['status'] === 'Failed') {
+                                        $statusClass = 'status-cancelled';
+                                    } elseif ($payment['status'] === 'Refunded') {
+                                        $statusClass = 'status-unavailable';
+                                    }
+                                ?>
+                                <tr>
+                                    <td>#<?php echo (int)$payment['payment_id']; ?></td>
+                                    <td><?php echo htmlspecialchars($payment['full_name']); ?></td>
+                                    <td>#<?php echo (int)$payment['appointment_id']; ?></td>
+                                    <td>৳<?php echo number_format((float)$payment['amount'], 2); ?></td>
+                                    <td><?php echo htmlspecialchars($payment['payment_method'] ?: 'N/A'); ?></td>
+                                    <td><span class="status-badge <?php echo $statusClass; ?>"><?php echo htmlspecialchars($payment['status']); ?></span></td>
+                                    <td><?php echo date('M d, Y h:i A', strtotime($payment['paid_at'])); ?></td>
+                                </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else: ?>
+                <p style="margin:0; color:#64748b;">No payments recorded yet.</p>
+            <?php endif; ?>
         </div>
     </div>
 </div>

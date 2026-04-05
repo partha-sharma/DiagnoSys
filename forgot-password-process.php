@@ -7,7 +7,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $email = trim($_POST['email'] ?? '');
+$source = trim($_POST['source'] ?? '');
 $errors = [];
+
+$queryParams = [];
+if ($source !== '') {
+    $queryParams['from'] = $source;
+}
+if ($email !== '') {
+    $queryParams['email'] = $email;
+}
+$redirectSuffix = !empty($queryParams) ? '?' . http_build_query($queryParams) : '';
 
 if ($email === '') {
     $errors[] = 'Email is required.';
@@ -15,7 +25,8 @@ if ($email === '') {
 
 if (!empty($errors)) {
     $_SESSION['errors'] = $errors;
-    header('Location: forgot-password.php');
+    $_SESSION['old_forgot_email'] = $email;
+    header('Location: forgot-password.php' . $redirectSuffix);
     exit();
 }
 
@@ -41,5 +52,6 @@ $stmt->close();
 $conn->close();
 
 $_SESSION['success'] = 'If the email exists, a reset link has been generated.';
-header('Location: forgot-password.php');
+$_SESSION['old_forgot_email'] = $email;
+header('Location: forgot-password.php' . $redirectSuffix);
 exit();

@@ -92,14 +92,8 @@ $stmt->close();
             <div class="action-card">
                 <div class="action-icon">👤</div>
                 <h3>Update Profile</h3>
-                <p>Manage your details and profile photo.</p>
-                <a href="profile.php" class="btn-primary">Open Profile</a>
-            </div>
-            <div class="action-card">
-                <div class="action-icon">🔐</div>
-                <h3>Account Recovery</h3>
-                <p>Forgot password? Reset from the secure recovery page.</p>
-                <a href="forgot-password.php" class="btn-primary">Reset Password</a>
+                <p>Manage your details, profile photo, and account recovery options.</p>
+                <a href="profile.php" class="btn-primary">Open Profile & Recovery</a>
             </div>
             <div class="action-card">
                 <div class="action-icon">💳</div>

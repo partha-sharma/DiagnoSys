@@ -106,6 +106,8 @@ $appStatuses = ['Pending', 'Confirmed', 'Completed', 'Cancelled'];
         <a href="appointments.php" class="active">Appointments</a>
         <a href="technicians.php">Technicians</a>
         <a href="packages.php">Packages</a>
+        <a href="manage_rooms.php">Manage Rooms</a>
+        <a href="finance.php">Finance</a>
         <a href="users.php">Patients List</a>
         <hr style="border-color: #334155; margin: 20px 0;">
         <a href="../logout.php" class="sidebar-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
