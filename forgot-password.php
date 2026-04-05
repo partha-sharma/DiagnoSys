@@ -1,5 +1,17 @@
 <?php
 session_start();
+
+$prefillEmail = trim($_GET['email'] ?? '');
+$source = trim($_GET['from'] ?? '');
+
+if (isset($_SESSION['old_forgot_email'])) {
+    $prefillEmail = (string) $_SESSION['old_forgot_email'];
+    unset($_SESSION['old_forgot_email']);
+}
+
+$isProfileSource = $source === 'profile';
+$returnPath = $isProfileSource ? 'profile.php' : 'index.php';
+$returnLabel = $isProfileSource ? 'Back to Profile' : 'Back to Home';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -37,8 +49,9 @@ session_start();
         <?php endif; ?>
 
         <form action="forgot-password-process.php" method="POST">
+            <input type="hidden" name="source" value="<?php echo htmlspecialchars($source); ?>">
             <label>Email Address</label>
-            <input type="email" name="email" required placeholder="Enter your registered email">
+            <input type="email" name="email" value="<?php echo htmlspecialchars($prefillEmail); ?>" required placeholder="Enter your registered email">
 
             <button type="submit" class="btn-primary full">Send Reset Link</button>
         </form>
@@ -48,7 +61,7 @@ session_start();
         </div>
 
         <div class="back">
-            <a href="index.php">← Back to Home</a>
+            <a href="<?php echo htmlspecialchars($returnPath); ?>">← <?php echo htmlspecialchars($returnLabel); ?></a>
         </div>
     </div>
 </body>

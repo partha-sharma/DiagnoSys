@@ -51,6 +51,10 @@ INSERT INTO `admins` (`admin_id`, `username`, `password`, `email`, `created_at`)
 CREATE TABLE `appointments` (
   `appointment_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
+  `package_id` int(11) DEFAULT NULL,
+  `package_name_snapshot` varchar(100) DEFAULT NULL,
+  `package_tests_snapshot` longtext DEFAULT NULL,
+  `package_price_snapshot` decimal(10,2) DEFAULT 0.00,
   `appointment_date` datetime NOT NULL,
   `status` enum('Pending','Confirmed','Completed','Cancelled') DEFAULT 'Pending',
   `cancellation_reason` text DEFAULT NULL,
@@ -342,7 +346,8 @@ CREATE TABLE `packages` (
 CREATE TABLE `package_tests` (
   `package_test_id` int(11) NOT NULL,
   `package_id` int(11) NOT NULL,
-  `test_id` int(11) NOT NULL
+  `test_id` int(11) NOT NULL,
+  `package_test_price` decimal(10,2) NOT NULL DEFAULT 0.00
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -390,6 +395,7 @@ ALTER TABLE `admins`
 ALTER TABLE `appointments`
   ADD PRIMARY KEY (`appointment_id`),
   ADD KEY `user_id` (`user_id`),
+  ADD KEY `idx_package_id` (`package_id`),
   ADD KEY `idx_sample_status` (`sample_status`),
   ADD KEY `idx_assigned_technician` (`assigned_technician_id`),
   ADD KEY `idx_appointment_date` (`appointment_date`);
@@ -637,6 +643,7 @@ ALTER TABLE `appointment_slots`
 --
 ALTER TABLE `appointments`
   ADD CONSTRAINT `appointments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `appointments_ibfk_package` FOREIGN KEY (`package_id`) REFERENCES `packages` (`package_id`) ON DELETE SET NULL,
   ADD CONSTRAINT `appointments_ibfk_technician` FOREIGN KEY (`assigned_technician_id`) REFERENCES `technicians` (`technician_id`) ON DELETE SET NULL;
 
 --

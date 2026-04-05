@@ -65,6 +65,8 @@ $tech_result = $conn->query("SELECT technician_id, name, email, phone, specializ
         <a href="appointments.php">Appointments</a>
         <a href="technicians.php" class="active">Technicians</a>
         <a href="packages.php">Packages</a>
+        <a href="manage_rooms.php">Manage Rooms</a>
+        <a href="finance.php">Finance</a>
         <a href="users.php">Patients List</a>
         <hr style="border-color: #334155; margin: 20px 0;">
         <a href="../logout.php" class="sidebar-logout">Logout</a>

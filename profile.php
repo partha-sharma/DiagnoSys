@@ -93,6 +93,12 @@ $profilePath = !empty($user['profile_photo']) ? '/DiagnoSys/' . ltrim($user['pro
 
                     <button type="submit" class="btn-primary">Save Profile</button>
                 </form>
+
+                <div class="profile-recovery">
+                    <h3>Account Recovery</h3>
+                    <p>Forgot password? Reset from the secure recovery page.</p>
+                    <a href="forgot-password.php?from=profile&email=<?php echo urlencode($user['email']); ?>" class="btn-outline">Reset Password</a>
+                </div>
             </div>
         </div>
     </div>

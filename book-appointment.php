@@ -31,7 +31,7 @@ $technicians_result = $conn->query("SELECT technician_id, name, specialization F
     <div class="appointment-container">
         <div class="appointment-header">
             <h1>Schedule Your Appointment</h1>
-            <p>Select your desired date, time, and the tests you need.</p>
+            <p>Select your desired date and tests. Time-slot planning is handled by admin with room management.</p>
         </div>
 
         <?php
@@ -57,13 +57,9 @@ $technicians_result = $conn->query("SELECT technician_id, name, specialization F
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Select Time</label>
-                        <div class="time-slots" id="timeSlotsContainer">
-                            <p style="grid-column: 1/-1; text-align: center; color: #94a3b8; padding: 20px 0;">
-                                Select a date first
-                            </p>
-                        </div>
-                        <small id="slotInfoText" style="display:block; margin-top:8px; color:#64748b;"></small>
+                        <label class="form-label">Time Slot</label>
+                        <p style="margin: 0; color: #64748b; font-size: 14px;">Managed by admin according to room allocation and capacity.</p>
+                        <small id="slotInfoText" style="display:block; margin-top:8px; color:#64748b;">Pick a date. Exact timing will be finalized by admin.</small>
                         <input type="hidden" id="appointment_time" name="appointment_time" required>
                     </div>
 
@@ -79,10 +75,18 @@ $technicians_result = $conn->query("SELECT technician_id, name, specialization F
                                 <?php endwhile; ?>
                             <?php endif; ?>
                         </select>
+                        <div class="package-info-box" id="packageInfoBox" style="display:none;"></div>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Select Tests</label>
+                        <input
+                            type="text"
+                            id="testSearchInput"
+                            class="form-input"
+                            placeholder="Search tests by name"
+                            style="margin-bottom:10px;"
+                        >
                         <ul class="test-list">
                             <?php while($test = $tests_result->fetch_assoc()): ?>
                             <li>
@@ -101,6 +105,7 @@ $technicians_result = $conn->query("SELECT technician_id, name, specialization F
                             </li>
                             <?php endwhile; ?>
                         </ul>
+                        <small id="testSearchEmpty" style="display:none; color:#64748b;">No tests matched your search.</small>
                     </div>
 
                     <div class="info-text">
@@ -204,8 +209,9 @@ $technicians_result = $conn->query("SELECT technician_id, name, specialization F
     <script>
         const dateInput = document.getElementById('appointment_date');
         const timeInput = document.getElementById('appointment_time');
-        const timeSlotsContainer = document.getElementById('timeSlotsContainer');
         const submitBtn = document.getElementById('submitBtn');
+        const packageSelect = document.getElementById('packageSelect');
+        const packageInfoBox = document.getElementById('packageInfoBox');
 
         const slotInfoText = document.getElementById('slotInfoText');
 
@@ -216,81 +222,142 @@ $technicians_result = $conn->query("SELECT technician_id, name, specialization F
         const dd = String(today.getDate()).padStart(2, '0');
         dateInput.min = `${yyyy}-${mm}-${dd}`;
 
-        // Format time to 12-hour
-        function formatTime(time) {
-            const [h, m] = time.split(':');
-            const hour = parseInt(h);
-            const ampm = hour >= 12 ? 'PM' : 'AM';
-            const hr = hour % 12 || 12;
-            return `${hr}:${m} ${ampm}`;
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
-        // Load time slots when date changes
-        dateInput.addEventListener('change', function() {
-            if (!this.value) return;
+        let selectedPackage = null;
+        let packageIncludedTestIds = new Set();
+        let previousPackageIncludedTestIds = new Set();
 
-            timeSlotsContainer.innerHTML = '';
-            timeInput.value = '';
-            submitBtn.disabled = true;
-            const selectedDate = new Date(this.value);
-            const isToday = selectedDate.toDateString() === today.toDateString();
+        function getManualSelectedTests() {
+            return Array.from(document.querySelectorAll('.test-checkbox'))
+                .filter(checkbox => checkbox.checked && !checkbox.disabled)
+                .map(checkbox => ({
+                    id: checkbox.value,
+                    name: checkbox.dataset.testName,
+                    price: parseFloat(checkbox.dataset.testPrice)
+                }));
+        }
 
-            fetch(`get-available-slots.php?date=${encodeURIComponent(this.value)}`)
-            .then(response => response.json())
-            .then(data => {
-                if (!data.success || !Array.isArray(data.slots) || data.slots.length === 0) {
-                    slotInfoText.textContent = 'No configured slots found for this date. Contact admin.';
+        function getPackageSubtotal() {
+            if (!selectedPackage) return 0;
+            return parseFloat(selectedPackage.final_price || 0);
+        }
+
+        function calculateSubtotal() {
+            const manualSubtotal = getManualSelectedTests().reduce((sum, test) => sum + test.price, 0);
+            return getPackageSubtotal() + manualSubtotal;
+        }
+
+        function canSubmitBooking() {
+            const hasSelection = Boolean(selectedPackage) || getManualSelectedTests().length > 0;
+            return hasSelection && Boolean(timeInput.value);
+        }
+
+        function renderPackageInfo() {
+            if (!selectedPackage) {
+                packageInfoBox.style.display = 'none';
+                packageInfoBox.innerHTML = '';
+                return;
+            }
+
+            const includedTests = selectedPackage.tests || [];
+            const testItems = includedTests.map(test => `<li><span>${escapeHtml(test.test_name)}</span> <span>৳${Number(test.package_test_price).toFixed(2)}</span></li>`).join('');
+
+            packageInfoBox.innerHTML = `
+                <div class="package-info-card">
+                    <div class="package-info-header">
+                        <strong>${escapeHtml(selectedPackage.name)}</strong>
+                        <span>৳${Number(selectedPackage.final_price).toFixed(2)}</span>
+                    </div>
+                    <p>${escapeHtml(selectedPackage.description || '')}</p>
+                    <small>Included tests are locked for this booking.</small>
+                    <ul class="package-info-list">${testItems}</ul>
+                </div>
+            `;
+            packageInfoBox.style.display = 'block';
+        }
+
+        function syncPackageTestLock() {
+            document.querySelectorAll('.test-checkbox').forEach(checkbox => {
+                const isPackageTest = packageIncludedTestIds.has(String(checkbox.value));
+                const wasLockedByPackage = previousPackageIncludedTestIds.has(String(checkbox.value));
+                if (selectedPackage && isPackageTest) {
+                    checkbox.checked = true;
+                    checkbox.disabled = true;
+                    checkbox.closest('li')?.classList.add('package-included-test');
+                } else {
+                    checkbox.disabled = false;
+                    checkbox.closest('li')?.classList.remove('package-included-test');
+                    if (wasLockedByPackage) {
+                        checkbox.checked = false;
+                    } else if (!checkbox.checked) {
+                        checkbox.checked = false;
+                    }
+                }
+            });
+
+            previousPackageIncludedTestIds = new Set(packageIncludedTestIds);
+        }
+
+        async function loadPackageDetails(packageId) {
+            selectedPackage = null;
+            packageIncludedTestIds = new Set();
+
+            if (!packageId) {
+                renderPackageInfo();
+                syncPackageTestLock();
+                updateCart();
+                return;
+            }
+
+            packageInfoBox.style.display = 'block';
+            packageInfoBox.innerHTML = '<div class="package-info-card">Loading package details...</div>';
+
+            try {
+                const response = await fetch(`get-package-details.php?package_id=${encodeURIComponent(packageId)}`);
+                const data = await response.json();
+
+                if (!data.success || !data.package) {
+                    packageInfoBox.innerHTML = '<div class="package-info-card">Unable to load package details.</div>';
                     return;
                 }
 
-                data.slots.forEach(slotRow => {
-                    const slot = slotRow.time;
-                    const available = Number(slotRow.available || 0);
-                    const status = String(slotRow.status || 'Available');
+                selectedPackage = data.package;
+                packageIncludedTestIds = new Set((data.package.tests || []).map(test => String(test.test_id)));
+                renderPackageInfo();
+                syncPackageTestLock();
+                updateCart();
+            } catch (error) {
+                packageInfoBox.innerHTML = '<div class="package-info-card">Could not load package details.</div>';
+            }
+        }
 
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.textContent = formatTime(slot);
-                btn.className = 'time-btn';
-                btn.dataset.time = slot;
+        // Keep patient booking independent from slot management. Admin finalizes exact schedule.
+        dateInput.addEventListener('change', function() {
+            if (!this.value) {
+                timeInput.value = '';
+                slotInfoText.textContent = 'Pick a date. Exact timing will be finalized by admin.';
+                submitBtn.disabled = !canSubmitBooking();
+                return;
+            }
 
-                // Disable past slots
-                if (isToday) {
-                    const [h, m] = slot.split(':');
-                    const slotTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), h, m);
-                    if (slotTime < today) {
-                        btn.disabled = true;
-                    }
-                }
-
-                if (status !== 'Available' || available <= 0) {
-                    btn.disabled = true;
-                    btn.title = 'Slot unavailable';
-                } else {
-                    btn.title = `${available} seats left`;
-                }
-
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    if (!this.disabled) {
-                        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
-                        this.classList.add('selected');
-                        timeInput.value = this.dataset.time;
-                        submitBtn.disabled = selectedTests.length === 0;
-                        slotInfoText.textContent = this.title;
-                    }
-                });
-
-                timeSlotsContainer.appendChild(btn);
-                });
-            })
-            .catch(() => {
-                slotInfoText.textContent = 'Could not fetch live slot availability.';
-            });
+            timeInput.value = '09:00';
+            slotInfoText.textContent = 'Date selected. Admin will finalize room and exact slot timing.';
+            submitBtn.disabled = !canSubmitBooking();
         });
 
         // Cart functionality
         const testCheckboxes = document.querySelectorAll('.test-checkbox');
+        const testSearchInput = document.getElementById('testSearchInput');
+        const testSearchEmpty = document.getElementById('testSearchEmpty');
+        const testListItems = document.querySelectorAll('.test-list li');
         const cartContent = document.getElementById('cartContent');
         const cartItems = document.getElementById('cartItems');
         const selectedTestsList = document.getElementById('selectedTestsList');
@@ -308,23 +375,13 @@ $technicians_result = $conn->query("SELECT technician_id, name, specialization F
         const homeCollectionFields = document.getElementById('homeCollectionFields');
         const collectionChargeInput = document.getElementById('collectionChargeInput');
 
-        let selectedTests = [];
         let appliedCoupon = null;
 
         function updateCart() {
-            selectedTests = [];
-            
-            testCheckboxes.forEach(checkbox => {
-                if (checkbox.checked) {
-                    selectedTests.push({
-                        id: checkbox.value,
-                        name: checkbox.dataset.testName,
-                        price: parseFloat(checkbox.dataset.testPrice)
-                    });
-                }
-            });
+            const selectedTests = getManualSelectedTests();
+            const packageSubtotal = getPackageSubtotal();
 
-            if (selectedTests.length === 0) {
+            if (!selectedPackage && selectedTests.length === 0) {
                 cartContent.style.display = 'block';
                 cartItems.style.display = 'none';
                 submitBtn.disabled = true;
@@ -337,10 +394,28 @@ $technicians_result = $conn->query("SELECT technician_id, name, specialization F
 
             cartContent.style.display = 'none';
             cartItems.style.display = 'block';
-            submitBtn.disabled = !timeInput.value;
+            submitBtn.disabled = !canSubmitBooking();
 
             // Update cart list
             selectedTestsList.innerHTML = '';
+            if (selectedPackage) {
+                const packageItem = document.createElement('li');
+                packageItem.className = 'cart-item package-item';
+                packageItem.innerHTML = `
+                    <span>${selectedPackage.name} <small>(Package)</small></span>
+                    <span>৳${parseFloat(selectedPackage.final_price).toFixed(2)}</span>
+                `;
+                selectedTestsList.appendChild(packageItem);
+
+                const packageDetail = document.createElement('li');
+                packageDetail.className = 'cart-item package-detail';
+                packageDetail.innerHTML = `
+                    <span>Included: ${(selectedPackage.tests || []).map(test => test.test_name).join(', ')}</span>
+                    <span>Locked</span>
+                `;
+                selectedTestsList.appendChild(packageDetail);
+            }
+
             selectedTests.forEach(test => {
                 const li = document.createElement('li');
                 li.className = 'cart-item';
@@ -360,7 +435,7 @@ $technicians_result = $conn->query("SELECT technician_id, name, specialization F
         }
 
         function recalculateCouponDiscount() {
-            const subtotal = selectedTests.reduce((sum, test) => sum + test.price, 0);
+            const subtotal = calculateSubtotal();
             let discount = 0;
 
             if (appliedCoupon.type === 'percentage') {
@@ -377,7 +452,7 @@ $technicians_result = $conn->query("SELECT technician_id, name, specialization F
         }
 
         function calculateTotals() {
-            const subtotal = selectedTests.reduce((sum, test) => sum + test.price, 0);
+            const subtotal = calculateSubtotal();
             let discount = 0;
             let collectionCharge = 0;
 
@@ -412,7 +487,7 @@ $technicians_result = $conn->query("SELECT technician_id, name, specialization F
             console.log('=== applyCoupon() called ===');
             const code = couponInput.value.trim().toUpperCase();
             console.log('Coupon code entered:', code);
-            console.log('Selected tests:', selectedTests);
+            console.log('Selected tests:', getManualSelectedTests());
             
             if (!code) {
                 console.log('No code entered');
@@ -420,13 +495,13 @@ $technicians_result = $conn->query("SELECT technician_id, name, specialization F
                 return;
             }
 
-            if (selectedTests.length === 0) {
+            if (!selectedPackage && getManualSelectedTests().length === 0) {
                 console.log('No tests selected');
                 showCouponMessage('Please select tests first', 'error');
                 return;
             }
 
-            const subtotal = selectedTests.reduce((sum, test) => sum + test.price, 0);
+            const subtotal = calculateSubtotal();
             console.log('Subtotal for validation:', subtotal);
 
             // Disable button during validation
@@ -495,9 +570,36 @@ $technicians_result = $conn->query("SELECT technician_id, name, specialization F
             couponMessage.className = `coupon-message ${type}`;
         }
 
+        function filterTests(query) {
+            const normalizedQuery = String(query || '').trim().toLowerCase();
+            let visibleCount = 0;
+
+            testListItems.forEach(item => {
+                const label = item.querySelector('label');
+                const nameText = label ? label.textContent.toLowerCase() : '';
+                const matched = normalizedQuery === '' || nameText.includes(normalizedQuery);
+                item.style.display = matched ? '' : 'none';
+                if (matched) {
+                    visibleCount++;
+                }
+            });
+
+            testSearchEmpty.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+
         // Event listeners
         testCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', updateCart);
+        });
+
+        if (testSearchInput) {
+            testSearchInput.addEventListener('input', function() {
+                filterTests(this.value);
+            });
+        }
+
+        packageSelect.addEventListener('change', function() {
+            loadPackageDetails(this.value);
         });
 
         if (isHomeCollection) {
@@ -534,6 +636,11 @@ $technicians_result = $conn->query("SELECT technician_id, name, specialization F
 
         // Initial cart update
         updateCart();
+        filterTests('');
+
+        if (packageSelect.value) {
+            loadPackageDetails(packageSelect.value);
+        }
         
         console.log('Cart system initialized');
         console.log('Test checkboxes found:', testCheckboxes.length);
