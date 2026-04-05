@@ -29,6 +29,8 @@ $result = $conn->query("SELECT * FROM tests ORDER BY test_id DESC");
         <a href="appointments.php">Appointments</a>
         <a href="technicians.php">Technicians</a>
         <a href="packages.php">Packages</a>
+        <a href="manage_rooms.php">Manage Rooms</a>
+        <a href="finance.php">Finance</a>
         <a href="users.php">Patients List</a>
         <hr style="border-color: #334155; margin: 20px 0;">
         <a href="../logout.php" class="sidebar-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
@@ -41,10 +43,22 @@ $result = $conn->query("SELECT * FROM tests ORDER BY test_id DESC");
     <div class="manage-tests-header">
         <div class="header-text">
             <h1>Manage Tests</h1>
-            <p>Add, edit, or remove diagnostic tests</p>
+            <p>Add, edit, or remove diagnostic tests.</p>
         </div>
-        <button class="btn-primary" onclick="openAddModal()">+ Add New Test</button>
+        <div class="header-actions">
+            <button class="btn-primary" onclick="openAddModal()">+ Add New Test</button>
+        </div>
     </div>
+
+    <?php if (isset($_SESSION['success'])): ?>
+        <div class="alert alert-success"><?php echo htmlspecialchars($_SESSION['success']); ?></div>
+        <?php unset($_SESSION['success']); ?>
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['error'])): ?>
+        <div class="alert alert-error"><?php echo htmlspecialchars($_SESSION['error']); ?></div>
+        <?php unset($_SESSION['error']); ?>
+    <?php endif; ?>
 
     <!-- Tests Card Grid -->
     <div class="tests-grid">
@@ -57,6 +71,17 @@ $result = $conn->query("SELECT * FROM tests ORDER BY test_id DESC");
             <div class="test-card-top">
                 <div class="test-card-icon"><i class="fa-solid fa-flask" style="font-size: 28px;"></i></div>
                 <div class="test-card-actions">
+                    <button type="button"
+                            class="edit-btn"
+                            title="Edit"
+                            onclick="openEditModal(this)"
+                            data-test-id="<?php echo (int)$test['test_id']; ?>"
+                            data-test-name="<?php echo htmlspecialchars($test['test_name'], ENT_QUOTES); ?>"
+                            data-test-description="<?php echo htmlspecialchars($test['description'] ?? '', ENT_QUOTES); ?>"
+                            data-test-price="<?php echo htmlspecialchars($test['price'], ENT_QUOTES); ?>"
+                            data-test-status="<?php echo htmlspecialchars($test['status'] ?? 'Active', ENT_QUOTES); ?>">
+                       <i class="fa-solid fa-pen-to-square" style="font-size: 16px;"></i>
+                    </button>
                     <a href="tests-process.php?action=delete&id=<?php echo $test['test_id']; ?>"
                        class="delete-btn"
                        title="Delete"
@@ -117,9 +142,50 @@ $result = $conn->query("SELECT * FROM tests ORDER BY test_id DESC");
     </div>
 </div>
 
+<!-- Edit Test Modal -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeModal('editModal')">×</button>
+        <h2>Edit Test</h2>
+        <form action="tests-process.php" method="POST">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="test_id" id="edit_test_id">
+
+            <label>Test Name</label>
+            <input type="text" name="test_name" id="edit_test_name" required>
+
+            <label>Description</label>
+            <textarea name="description" id="edit_test_description" rows="3" placeholder="Describe the test"></textarea>
+
+            <label>Price (৳)</label>
+            <input type="number" step="0.01" name="price" id="edit_test_price" required>
+
+            <label>Status</label>
+            <select name="status" id="edit_test_status" required>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+            </select>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-outline" onclick="closeModal('editModal')">Cancel</button>
+                <button type="submit" class="btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 function openAddModal() {
     document.getElementById('addModal').classList.add('active');
+}
+
+function openEditModal(button) {
+    document.getElementById('edit_test_id').value = button.dataset.testId || '';
+    document.getElementById('edit_test_name').value = button.dataset.testName || '';
+    document.getElementById('edit_test_description').value = button.dataset.testDescription || '';
+    document.getElementById('edit_test_price').value = button.dataset.testPrice || '';
+    document.getElementById('edit_test_status').value = button.dataset.testStatus || 'Active';
+    document.getElementById('editModal').classList.add('active');
 }
 
 function closeModal(id) {
@@ -135,6 +201,10 @@ document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
     });
 });
 </script>
+
+<?php
+$conn->close();
+?>
 
 </body>
 </html>
