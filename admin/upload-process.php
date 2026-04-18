@@ -4,10 +4,10 @@ require_once '../config/init.php';
 // Admin Gatekeeper
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     if (isset($_SESSION['role']) && $_SESSION['role'] === 'patient') {
-        header("Location: ../dashboard.php");
+        header("Location: ../patient/dashboard.php");
         exit();
     }
-    header("Location: ../login.php");
+    header("Location: ../auth/login.php");
     exit();
 }
 
@@ -81,3 +81,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 header("Location: appointments.php");
 exit();
 ?>
+
+

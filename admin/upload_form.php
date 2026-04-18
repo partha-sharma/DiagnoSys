@@ -4,10 +4,10 @@ require_once '../config/init.php';
 // Admin Gatekeeper
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     if (isset($_SESSION['role']) && $_SESSION['role'] === 'patient') {
-        header("Location: ../dashboard.php");
+        header("Location: ../patient/dashboard.php");
         exit();
     }
-    header("Location: ../login.php");
+    header("Location: ../auth/login.php");
     exit();
 }
 
@@ -41,7 +41,7 @@ if ($appointment_id <= 0) {
         <a href="finance.php">Finance</a>
         <a href="users.php">Patients List</a>
         <hr style="border-color: #334155; margin: 20px 0;">
-        <a href="../logout.php" class="sidebar-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        <a href="../auth/logout.php" class="sidebar-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
     </div>
 
     <!-- Right Content -->
@@ -76,3 +76,5 @@ if ($appointment_id <= 0) {
 
 </body>
 </html>
+
+

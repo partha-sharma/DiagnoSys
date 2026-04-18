@@ -2,7 +2,7 @@
 require_once '../config/init.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header('Location: ../login.php');
+    header('Location: ../auth/login.php');
     exit();
 }
 
@@ -194,7 +194,7 @@ $packageCatalog = array_values($packages);
         <a href="finance.php">Finance</a>
         <a href="users.php">Patients List</a>
         <hr style="border-color: #334155; margin: 20px 0;">
-        <a href="../logout.php" class="sidebar-logout">Logout</a>
+        <a href="../auth/logout.php" class="sidebar-logout">Logout</a>
     </div>
 
     <div class="content">
@@ -461,3 +461,4 @@ document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
 </body>
 </html>
 <?php $conn->close(); ?>
+

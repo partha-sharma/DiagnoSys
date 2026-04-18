@@ -17,8 +17,8 @@
             DiagnoLab
         </div>
         <div class="nav-buttons">
-            <a href="login.php" class="btn-outline">Login</a>
-            <a href="register.php" class="btn-primary">Register</a>
+            <a href="auth/login.php" class="btn-outline">Login</a>
+            <a href="auth/register.php" class="btn-primary">Register</a>
         </div>
     </nav>
 
@@ -27,8 +27,8 @@
         <h1>Online Diagnostic Lab Management System</h1>
         <p>Book diagnostic tests online, access reports securely, and manage your health records with ease.</p>
         <div class="hero-buttons">
-            <a href="book-test.php" class="btn-primary">Book Test Now</a>
-            <a href="test-prices.php" class="btn-outline">View Test Prices</a>
+            <a href="patient/book-appointment.php" class="btn-primary">Book Test Now</a>
+            <a href="patient/test-prices.php" class="btn-outline">View Test Prices</a>
         </div>
     </section>
 
@@ -103,7 +103,7 @@
     <!-- Call to Action -->
     <section class="cta">
         <h2>Ready to Get Started?</h2>
-        <a href="register.php" class="btn-white">Register Now</a>
+        <a href="auth/register.php" class="btn-white">Register Now</a>
     </section>
 
     <!-- Footer -->
@@ -113,3 +113,4 @@
 
 </body>
 </html>
+

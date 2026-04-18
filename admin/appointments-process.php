@@ -2,7 +2,7 @@
 require_once '../config/init.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header('Location: ../login.php');
+    header('Location: ../auth/login.php');
     exit();
 }
 
@@ -122,3 +122,4 @@ switch ($action) {
 $conn->close();
 header('Location: appointments.php');
 exit();
+

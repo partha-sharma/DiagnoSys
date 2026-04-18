@@ -5,11 +5,11 @@ require_once '../config/init.php';
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     // If it's a patient trying to be sneaky, send them back to dashboard
     if (isset($_SESSION['role']) && $_SESSION['role'] === 'patient') {
-        header("Location: ../dashboard.php");
+        header("Location: ../patient/dashboard.php");
         exit();
     }
     // Otherwise send to login
-    header("Location: ../login.php");
+    header("Location: ../auth/login.php");
     exit();
 }
 
@@ -64,7 +64,7 @@ if ($usersResult) {
         <a href="finance.php">Finance</a>
         <a href="users.php" class="active">Patients List</a>
         <hr style="border-color: #334155; margin: 20px 0;">
-        <a href="../logout.php" class="sidebar-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        <a href="../auth/logout.php" class="sidebar-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
     </div>
 
     <!-- Right Content -->
@@ -111,3 +111,5 @@ if ($usersResult) {
 
 </body>
 </html>
+
+

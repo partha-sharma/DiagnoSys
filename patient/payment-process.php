@@ -1,0 +1,315 @@
+<?php
+require_once __DIR__ . '/../config/init.php';
+
+function infer_test_type(string $testName): string
+{
+    return infer_test_category_from_text($testName);
+}
+
+function pick_assignment_for_test(mysqli $conn, int $testId, string $testType): ?array
+{
+    $sql = "SELECT ra.assignment_id, ra.room_id, ra.slot_id, ra.capacity, ra.booked_count,
+                   r.room_number, rs.slot_label, rs.start_time
+            FROM room_assignments ra
+            INNER JOIN rooms r ON ra.room_id = r.room_id
+            INNER JOIN room_time_slots rs ON ra.slot_id = rs.slot_id
+            WHERE ra.status = 'Active'
+              AND r.status = 'Active'
+              AND rs.status = 'Active'
+              AND ra.capacity > ra.booked_count
+              AND (
+                  ra.mapped_test_id = ?
+                  OR (ra.map_scope = 'type' AND ra.mapped_test_type = ?)
+                  OR (ra.map_scope = 'type' AND ra.mapped_test_type = 'General')
+              )
+            ORDER BY
+                (ra.mapped_test_id = ?) DESC,
+                (ra.mapped_test_type = ?) DESC,
+                (ra.capacity - ra.booked_count) DESC,
+                rs.start_time ASC
+            LIMIT 50";
+
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('isis', $testId, $testType, $testId, $testType);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rows = [];
+    while ($row = $result->fetch_assoc()) {
+        $rows[] = $row;
+    }
+    $stmt->close();
+
+    if (!empty($rows)) {
+        return $rows[array_rand($rows)];
+    }
+
+    $fallback = $conn->query("SELECT ra.assignment_id, ra.room_id, ra.slot_id, ra.capacity, ra.booked_count,
+                                     r.room_number, rs.slot_label, rs.start_time
+                              FROM room_assignments ra
+                              INNER JOIN rooms r ON ra.room_id = r.room_id
+                              INNER JOIN room_time_slots rs ON ra.slot_id = rs.slot_id
+                              WHERE ra.status = 'Active'
+                                AND r.status = 'Active'
+                                AND rs.status = 'Active'
+                                AND ra.capacity > ra.booked_count
+                              ORDER BY (ra.capacity - ra.booked_count) DESC, rs.start_time ASC
+                              LIMIT 50");
+
+    if (!$fallback) {
+        return null;
+    }
+
+    $fallbackRows = [];
+    while ($row = $fallback->fetch_assoc()) {
+        $fallbackRows[] = $row;
+    }
+
+    if (empty($fallbackRows)) {
+        return null;
+    }
+
+    return $fallbackRows[array_rand($fallbackRows)];
+}
+
+function generate_execution_plan(mysqli $conn, int $appointmentId, int $userId): void
+{
+    $existsStmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM appointment_test_plan WHERE appointment_id = ?");
+    $existsStmt->bind_param('i', $appointmentId);
+    $existsStmt->execute();
+    $existingCount = (int)($existsStmt->get_result()->fetch_assoc()['cnt'] ?? 0);
+    $existsStmt->close();
+
+    if ($existingCount > 0) {
+        return;
+    }
+
+    $apptStmt = $conn->prepare("SELECT appointment_date FROM appointments WHERE appointment_id = ? AND user_id = ? LIMIT 1");
+    $apptStmt->bind_param('ii', $appointmentId, $userId);
+    $apptStmt->execute();
+    $appt = $apptStmt->get_result()->fetch_assoc();
+    $apptStmt->close();
+
+    if (!$appt) {
+        throw new Exception('Appointment not found while generating execution plan.');
+    }
+
+    $dateOnly = date('Y-m-d', strtotime($appt['appointment_date']));
+
+    $testsStmt = $conn->prepare("SELECT t.test_id, t.test_name, COALESCE(t.test_category, '') AS test_category, COALESCE(t.test_type, '') AS test_type
+                                 FROM appointment_tests at
+                                 INNER JOIN tests t ON at.test_id = t.test_id
+                                 WHERE at.appointment_id = ?
+                                 ORDER BY t.test_name ASC");
+    $testsStmt->bind_param('i', $appointmentId);
+    $testsStmt->execute();
+    $testsResult = $testsStmt->get_result();
+
+    $insertPlan = $conn->prepare("INSERT INTO appointment_test_plan
+        (appointment_id, test_id, test_name_snapshot, room_id, room_number_snapshot, slot_id, slot_label_snapshot, estimated_at, sequence_no, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Planned')");
+
+    $updateCapacity = $conn->prepare("UPDATE room_assignments SET booked_count = booked_count + 1 WHERE assignment_id = ?");
+
+    $sequence = 1;
+    while ($test = $testsResult->fetch_assoc()) {
+        $testId = (int)$test['test_id'];
+        $testName = $test['test_name'];
+        $testType = trim((string)$test['test_category']) !== ''
+            ? normalize_test_category((string)$test['test_category'])
+            : infer_test_category_from_text($testName, '', (string)$test['test_type']);
+
+        $assignment = pick_assignment_for_test($conn, $testId, $testType);
+        $roomId = null;
+        $roomNumberSnapshot = null;
+        $slotId = null;
+        $slotLabelSnapshot = null;
+        $estimatedAt = null;
+
+        if ($assignment) {
+            $roomId = (int)$assignment['room_id'];
+            $slotId = (int)$assignment['slot_id'];
+            $roomNumberSnapshot = $assignment['room_number'];
+            $slotLabelSnapshot = $assignment['slot_label'];
+            $estimatedAt = $dateOnly . ' ' . $assignment['start_time'];
+
+            $assignmentId = (int)$assignment['assignment_id'];
+            $updateCapacity->bind_param('i', $assignmentId);
+            $updateCapacity->execute();
+        }
+
+        $roomIdValue = $roomId !== null ? (string)$roomId : null;
+        $slotIdValue = $slotId !== null ? (string)$slotId : null;
+
+        $insertPlan->bind_param(
+            'iissssssi',
+            $appointmentId,
+            $testId,
+            $testName,
+            $roomIdValue,
+            $roomNumberSnapshot,
+            $slotIdValue,
+            $slotLabelSnapshot,
+            $estimatedAt,
+            $sequence
+        );
+        $insertPlan->execute();
+
+        $sequence++;
+    }
+
+    $testsStmt->close();
+    $insertPlan->close();
+    $updateCapacity->close();
+
+    $planSummarySql = "SELECT sequence_no, test_name_snapshot, COALESCE(room_number_snapshot, 'To Be Assigned') AS room_no,
+                              COALESCE(slot_label_snapshot, 'To Be Assigned') AS slot_label
+                       FROM appointment_test_plan
+                       WHERE appointment_id = ?
+                       ORDER BY sequence_no ASC
+                       LIMIT 5";
+    $summaryStmt = $conn->prepare($planSummarySql);
+    $summaryStmt->bind_param('i', $appointmentId);
+    $summaryStmt->execute();
+    $summaryResult = $summaryStmt->get_result();
+
+    $summaryLines = [];
+    while ($line = $summaryResult->fetch_assoc()) {
+        $summaryLines[] = $line['sequence_no'] . '. ' . $line['test_name_snapshot'] . ' - ' . $line['room_no'] . ' (' . $line['slot_label'] . ')';
+    }
+    $summaryStmt->close();
+
+    $userStmt = $conn->prepare("SELECT full_name, email FROM users WHERE user_id = ? LIMIT 1");
+    $userStmt->bind_param('i', $userId);
+    $userStmt->execute();
+    $user = $userStmt->get_result()->fetch_assoc();
+    $userStmt->close();
+
+    $patientName = $user['full_name'] ?? 'Patient';
+    $email = $user['email'] ?? null;
+    $baseMsg = "Hello {$patientName}, payment is successful for Booking #{$appointmentId}. Your test sequence is ready: " . implode(' | ', $summaryLines) . ". Please check confirmation page for full details.";
+
+    $notifStmt = $conn->prepare("INSERT INTO notification_logs (appointment_id, user_id, channel, recipient, message_text, status) VALUES (?, ?, ?, ?, ?, 'Queued')");
+    $smsChannel = 'SMS';
+    $smsRecipient = 'On-file mobile number';
+    $notifStmt->bind_param('iisss', $appointmentId, $userId, $smsChannel, $smsRecipient, $baseMsg);
+    $notifStmt->execute();
+
+    $emailChannel = 'Email';
+    $emailRecipient = $email ?: 'No email on file';
+    $notifStmt->bind_param('iisss', $appointmentId, $userId, $emailChannel, $emailRecipient, $baseMsg);
+    $notifStmt->execute();
+    $notifStmt->close();
+}
+
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'patient') {
+    header('Location: ../auth/login.php');
+    exit();
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: dashboard.php');
+    exit();
+}
+
+$user_id = (int)$_SESSION['user_id'];
+$appointment_id = (int)($_POST['appointment_id'] ?? 0);
+$payment_method = trim($_POST['payment_method'] ?? '');
+$transaction_id = trim($_POST['transaction_id'] ?? '');
+
+if ($appointment_id <= 0 || $payment_method === '') {
+    $_SESSION['error'] = 'Invalid payment request.';
+    header('Location: payment.php?appointment_id=' . max(0, $appointment_id));
+    exit();
+}
+
+if (!in_array($payment_method, ['Cash', 'Cash on Arrival', 'bKash', 'Nagad', 'Card'], true)) {
+    $_SESSION['error'] = 'Unsupported payment method.';
+    header('Location: payment.php?appointment_id=' . $appointment_id);
+    exit();
+}
+
+if (!in_array($payment_method, ['Cash', 'Cash on Arrival'], true) && $transaction_id === '') {
+    $_SESSION['error'] = 'Transaction ID is required for this payment method.';
+    header('Location: payment.php?appointment_id=' . $appointment_id);
+    exit();
+}
+
+$check = $conn->prepare("SELECT appointment_id, status, total_amount FROM appointments WHERE appointment_id = ? AND user_id = ? LIMIT 1");
+$check->bind_param('ii', $appointment_id, $user_id);
+$check->execute();
+$appointment = $check->get_result()->fetch_assoc();
+$check->close();
+
+if (!$appointment) {
+    $_SESSION['error'] = 'Appointment not found.';
+    header('Location: dashboard.php');
+    exit();
+}
+
+if ($appointment['status'] === 'Cancelled') {
+    $_SESSION['error'] = 'Cancelled appointments cannot be paid.';
+    header('Location: payments.php');
+    exit();
+}
+
+$amount = (float)$appointment['total_amount'];
+if ($amount <= 0) {
+    $sumStmt = $conn->prepare("SELECT COALESCE(SUM(t.price),0) AS total FROM appointment_tests apt JOIN tests t ON apt.test_id = t.test_id WHERE apt.appointment_id = ?");
+    $sumStmt->bind_param('i', $appointment_id);
+    $sumStmt->execute();
+    $amount = (float)$sumStmt->get_result()->fetch_assoc()['total'];
+    $sumStmt->close();
+}
+
+if ($amount <= 0) {
+    $_SESSION['error'] = 'Unable to process payment amount for this appointment.';
+    header('Location: payment.php?appointment_id=' . $appointment_id);
+    exit();
+}
+
+$existingPayment = $conn->prepare("SELECT payment_id FROM payments WHERE appointment_id = ? AND user_id = ? AND status = 'Completed' LIMIT 1");
+$existingPayment->bind_param('ii', $appointment_id, $user_id);
+$existingPayment->execute();
+$completedPayment = $existingPayment->get_result()->fetch_assoc();
+$existingPayment->close();
+
+if ($completedPayment) {
+    $_SESSION['success'] = 'This appointment is already paid.';
+    header('Location: booking-confirmation.php?appointment_id=' . $appointment_id);
+    exit();
+}
+
+$conn->begin_transaction();
+
+try {
+    $stmt = $conn->prepare("INSERT INTO payments (appointment_id, user_id, amount, status, payment_method, transaction_id, payment_date) VALUES (?, ?, ?, 'Completed', ?, ?, NOW())");
+    $stmt->bind_param('iidss', $appointment_id, $user_id, $amount, $payment_method, $transaction_id);
+    $stmt->execute();
+    $stmt->close();
+
+    $update = $conn->prepare("UPDATE appointments SET status = CASE WHEN status = 'Pending' THEN 'Confirmed' ELSE status END WHERE appointment_id = ?");
+    $update->bind_param('i', $appointment_id);
+    $update->execute();
+    $update->close();
+
+    $history = $conn->prepare("INSERT INTO appointment_history (appointment_id, status) VALUES (?, ?)");
+    $historyStatus = 'Payment Completed via ' . $payment_method;
+    $history->bind_param('is', $appointment_id, $historyStatus);
+    $history->execute();
+    $history->close();
+
+    generate_execution_plan($conn, $appointment_id, $user_id);
+
+    $conn->commit();
+
+    $_SESSION['success'] = 'Payment successful. Your test room/time schedule is now ready.';
+    header('Location: booking-confirmation.php?appointment_id=' . $appointment_id);
+    exit();
+} catch (Exception $e) {
+    $conn->rollback();
+    $_SESSION['error'] = 'Payment failed. Please try again.';
+    header('Location: payment.php?appointment_id=' . $appointment_id);
+    exit();
+}
+
+

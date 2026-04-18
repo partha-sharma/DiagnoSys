@@ -3,10 +3,10 @@ require_once '../config/init.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     if (isset($_SESSION['role']) && $_SESSION['role'] === 'patient') {
-        header('Location: ../dashboard.php');
+        header('Location: ../patient/dashboard.php');
         exit();
     }
-    header('Location: ../login.php');
+    header('Location: ../auth/login.php');
     exit();
 }
 
@@ -63,12 +63,23 @@ $sql = "SELECT
             a.collection_charge,
             u.full_name,
             GROUP_CONCAT(DISTINCT t.test_name ORDER BY t.test_name SEPARATOR ', ') AS test_names,
-            MAX(an.created_at) AS last_note_at
+            MAX(an.created_at) AS last_note_at,
+            MAX(latest_results.file_path) AS result_file_path,
+            MAX(latest_results.uploaded_at) AS result_uploaded_at
         FROM appointments a
         JOIN users u ON a.user_id = u.user_id
         LEFT JOIN appointment_tests apt ON a.appointment_id = apt.appointment_id
         LEFT JOIN tests t ON apt.test_id = t.test_id
         LEFT JOIN appointment_notes an ON a.appointment_id = an.appointment_id
+        LEFT JOIN (
+            SELECT tr1.appointment_id, tr1.file_path, tr1.uploaded_at
+            FROM test_results tr1
+            INNER JOIN (
+                SELECT appointment_id, MAX(result_id) AS max_result_id
+                FROM test_results
+                GROUP BY appointment_id
+            ) latest_ids ON latest_ids.max_result_id = tr1.result_id
+        ) latest_results ON latest_results.appointment_id = a.appointment_id
         $where_sql
         GROUP BY a.appointment_id
         ORDER BY a.appointment_date DESC";
@@ -104,13 +115,14 @@ $appStatuses = ['Pending', 'Confirmed', 'Completed', 'Cancelled'];
         <a href="index.php">Dashboard</a>
         <a href="manage_tests.php">Manage Tests</a>
         <a href="appointments.php" class="active">Appointments</a>
+        <a href="test-results.php">Test Results</a>
         <a href="technicians.php">Technicians</a>
         <a href="packages.php">Packages</a>
         <a href="manage_rooms.php">Manage Rooms</a>
         <a href="finance.php">Finance</a>
         <a href="users.php">Patients List</a>
         <hr style="border-color: #334155; margin: 20px 0;">
-        <a href="../logout.php" class="sidebar-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        <a href="../auth/logout.php" class="sidebar-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
     </div>
 
     <div class="content">
@@ -183,11 +195,20 @@ $appStatuses = ['Pending', 'Confirmed', 'Completed', 'Cancelled'];
                             </td>
                             <td>
                                 <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                                    <a href="upload_form.php?id=<?php echo (int)$row['appointment_id']; ?>" class="btn-upload">Upload Result</a>
+                                    <?php if (!empty($row['result_file_path'])): ?>
+                                        <a href="<?php echo htmlspecialchars('../' . ltrim(str_replace('../', '', $row['result_file_path']), '/')); ?>" target="_blank" rel="noopener" class="btn-upload">View Result</a>
+                                    <?php else: ?>
+                                        <a href="test-results.php" class="btn-upload">View Results</a>
+                                    <?php endif; ?>
                                     <button type="button" class="btn-outline" onclick="openReschedule(<?php echo (int)$row['appointment_id']; ?>,'<?php echo htmlspecialchars(date('Y-m-d', strtotime($row['appointment_date'])), ENT_QUOTES); ?>','<?php echo htmlspecialchars(date('H:i', strtotime($row['appointment_date'])), ENT_QUOTES); ?>')">Reschedule</button>
                                     <button type="button" class="btn-outline" onclick="openCancel(<?php echo (int)$row['appointment_id']; ?>)">Cancel</button>
                                     <button type="button" class="btn-outline" onclick="openNote(<?php echo (int)$row['appointment_id']; ?>)">Add Note</button>
                                 </div>
+                                <?php if (!empty($row['result_file_path'])): ?>
+                                    <small style="display:block; color:#059669; margin-top:6px;">Result uploaded <?php echo date('M d, Y h:i A', strtotime($row['result_uploaded_at'])); ?></small>
+                                <?php else: ?>
+                                    <small style="display:block; color:#64748b; margin-top:6px;">No result uploaded yet</small>
+                                <?php endif; ?>
                                 <?php if (!empty($row['cancellation_reason'])): ?>
                                     <small style="display:block; color:#991b1b; margin-top:6px;">Reason: <?php echo htmlspecialchars($row['cancellation_reason']); ?></small>
                                 <?php endif; ?>
@@ -304,3 +325,5 @@ document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
 </body>
 </html>
 <?php $conn->close(); ?>
+
+

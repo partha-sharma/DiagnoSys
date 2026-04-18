@@ -3,32 +3,16 @@ require_once '../config/init.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     if (isset($_SESSION['role']) && $_SESSION['role'] === 'patient') {
-        header('Location: ../dashboard.php');
+        header('Location: ../patient/dashboard.php');
         exit();
     }
-    header('Location: ../login.php');
+    header('Location: ../auth/login.php');
     exit();
 }
 
 function normalize_test_type_from_name(string $name): string
 {
-    $n = strtolower($name);
-    if (str_contains($n, 'x-ray') || str_contains($n, 'xray') || str_contains($n, 'radiology')) {
-        return 'Radiology';
-    }
-    if (str_contains($n, 'ecg') || str_contains($n, 'echo') || str_contains($n, 'troponin') || str_contains($n, 'heart') || str_contains($n, 'blood pressure')) {
-        return 'Cardiology';
-    }
-    if (str_contains($n, 'urine')) {
-        return 'Urine';
-    }
-    if (str_contains($n, 'thyroid')) {
-        return 'Endocrinology';
-    }
-    if (str_contains($n, 'liver') || str_contains($n, 'kidney') || str_contains($n, 'lipid') || str_contains($n, 'blood') || str_contains($n, 'cbc') || str_contains($n, 'hba1c') || str_contains($n, 'crp')) {
-        return 'Blood Test';
-    }
-    return 'General';
+    return infer_test_category_from_text($name);
 }
 
 function redirect_manage_rooms(): void
@@ -219,11 +203,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$testsResult = $conn->query('SELECT test_id, test_name, COALESCE(test_type, "") AS test_type, price FROM tests ORDER BY test_name ASC');
+$testsResult = $conn->query('SELECT test_id, test_name, COALESCE(test_category, "") AS test_category, COALESCE(test_type, "") AS test_type, price FROM tests ORDER BY test_name ASC');
 $tests = [];
 $testTypeSet = [];
 while ($row = $testsResult->fetch_assoc()) {
-    $row['test_type'] = trim($row['test_type']) !== '' ? $row['test_type'] : normalize_test_type_from_name($row['test_name']);
+    $row['test_type'] = trim((string)$row['test_category']) !== ''
+        ? normalize_test_category((string)$row['test_category'])
+        : infer_test_category_from_text((string)$row['test_name'], '', (string)$row['test_type']);
     $tests[] = $row;
     $testTypeSet[$row['test_type']] = true;
 }
@@ -281,6 +267,7 @@ while ($a = $assignmentResult->fetch_assoc()) {
 }
 
 $planSql = "SELECT p.room_id, p.slot_id, p.appointment_id, p.test_name_snapshot,
+                   COALESCE(t.test_category, '') AS test_category,
                    COALESCE(t.test_type, '') AS test_type,
                    u.user_id, u.full_name,
                    a.appointment_date,
@@ -299,9 +286,11 @@ $patientsByCell = [];
 if ($planResult) {
     while ($row = $planResult->fetch_assoc()) {
         $key = ((int)$row['room_id']) . '_' . ((int)$row['slot_id']);
-        $testType = trim((string)$row['test_type']);
+        $testType = trim((string)$row['test_category']);
         if ($testType === '') {
-            $testType = normalize_test_type_from_name((string)$row['test_name_snapshot']);
+            $testType = infer_test_category_from_text((string)$row['test_name_snapshot'], '', (string)$row['test_type']);
+        } else {
+            $testType = normalize_test_category($testType);
         }
 
         $patientsByCell[$key][] = [
@@ -356,7 +345,7 @@ $conn->close();
         <a href="finance.php">Finance</a>
         <a href="users.php">Patients List</a>
         <hr style="border-color: #334155; margin: 20px 0;">
-        <a href="../logout.php" class="sidebar-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        <a href="../auth/logout.php" class="sidebar-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
     </div>
 
     <div class="content">
@@ -931,3 +920,5 @@ document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
 </script>
 </body>
 </html>
+
+
