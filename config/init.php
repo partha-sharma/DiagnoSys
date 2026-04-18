@@ -1,6 +1,7 @@
 <?php
 // config/init.php
 session_start();
+require_once __DIR__ . '/../includes/test_taxonomy.php';
 
 $host = 'localhost';
 $db_name = 'diagnosys_db';
@@ -67,6 +68,65 @@ function ensurePaymentsTable(mysqli $conn): void
 
     if (!$conn->query($sql)) {
         die('Database schema update failed for payments table: ' . $conn->error);
+    }
+}
+
+function ensureTechnicianAuthColumns(mysqli $conn): void
+{
+    $requiredColumns = [
+        'password_hash' => "ALTER TABLE technicians ADD COLUMN password_hash VARCHAR(255) DEFAULT NULL AFTER phone",
+    ];
+
+    foreach ($requiredColumns as $columnName => $alterSql) {
+        $check = $conn->prepare(
+            "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'technicians' AND COLUMN_NAME = ? LIMIT 1"
+        );
+
+        if (!$check) {
+            die('Schema check failed: ' . $conn->error);
+        }
+
+        $check->bind_param('s', $columnName);
+        $check->execute();
+        $result = $check->get_result();
+        $exists = $result && $result->num_rows > 0;
+        $check->close();
+
+        if (!$exists && !$conn->query($alterSql)) {
+            die("Database schema update failed for technicians.{$columnName}: " . $conn->error);
+        }
+    }
+}
+
+function ensureTestResultsColumns(mysqli $conn): void
+{
+    $requiredColumns = [
+        'technician_id' => "ALTER TABLE test_results ADD COLUMN technician_id INT(11) DEFAULT NULL AFTER admin_id",
+    ];
+
+    foreach ($requiredColumns as $columnName => $alterSql) {
+        $check = $conn->prepare(
+            "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'test_results' AND COLUMN_NAME = ? LIMIT 1"
+        );
+
+        if (!$check) {
+            die('Schema check failed: ' . $conn->error);
+        }
+
+        $check->bind_param('s', $columnName);
+        $check->execute();
+        $result = $check->get_result();
+        $exists = $result && $result->num_rows > 0;
+        $check->close();
+
+        if (!$exists && !$conn->query($alterSql)) {
+            die("Database schema update failed for test_results.{$columnName}: " . $conn->error);
+        }
+    }
+
+    $fkCheck = $conn->query("SELECT 1 FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'test_results' AND CONSTRAINT_NAME = 'test_results_ibfk_technician' LIMIT 1");
+    if ($fkCheck && $fkCheck->num_rows === 0) {
+        $conn->query("ALTER TABLE test_results ADD CONSTRAINT test_results_ibfk_technician FOREIGN KEY (technician_id) REFERENCES technicians (technician_id) ON DELETE SET NULL");
     }
 }
 
@@ -204,6 +264,40 @@ function ensureRoomSchedulingTables(mysqli $conn): void
         $conn->query("ALTER TABLE tests ADD COLUMN test_type VARCHAR(100) DEFAULT NULL AFTER description");
     }
 
+    $testCategoryCheck = $conn->query("SHOW COLUMNS FROM tests LIKE 'test_category'");
+    if ($testCategoryCheck && $testCategoryCheck->num_rows === 0) {
+        $conn->query("ALTER TABLE tests ADD COLUMN test_category VARCHAR(50) DEFAULT NULL AFTER description");
+    }
+
+    $sampleRequirementCheck = $conn->query("SHOW COLUMNS FROM tests LIKE 'sample_requirement'");
+    if ($sampleRequirementCheck && $sampleRequirementCheck->num_rows === 0) {
+        $conn->query("ALTER TABLE tests ADD COLUMN sample_requirement VARCHAR(30) DEFAULT NULL AFTER test_category");
+    }
+
+    $testsResult = $conn->query("SELECT test_id, test_name, COALESCE(description, '') AS description, COALESCE(test_type, '') AS test_type, COALESCE(test_category, '') AS test_category, COALESCE(sample_requirement, '') AS sample_requirement FROM tests");
+    if ($testsResult) {
+        $updateStmt = $conn->prepare("UPDATE tests SET test_category = ?, sample_requirement = ? WHERE test_id = ?");
+
+        while ($test = $testsResult->fetch_assoc()) {
+            $currentCategory = trim((string)$test['test_category']);
+            $currentSample = trim((string)$test['sample_requirement']);
+
+            $category = $currentCategory !== ''
+                ? normalize_test_category($currentCategory)
+                : infer_test_category_from_text((string)$test['test_name'], (string)$test['description'], (string)$test['test_type']);
+
+            $sample = $currentSample !== ''
+                ? normalize_sample_requirement($currentSample)
+                : infer_sample_requirement_from_text((string)$test['test_name'], (string)$test['description'], $category);
+
+            $testId = (int)$test['test_id'];
+            $updateStmt->bind_param('ssi', $category, $sample, $testId);
+            $updateStmt->execute();
+        }
+
+        $updateStmt->close();
+    }
+
     $roomCountResult = $conn->query("SELECT COUNT(*) AS cnt FROM rooms");
     $roomCount = $roomCountResult ? (int)($roomCountResult->fetch_assoc()['cnt'] ?? 0) : 0;
     if ($roomCount === 0) {
@@ -228,8 +322,68 @@ function ensureRoomSchedulingTables(mysqli $conn): void
     }
 }
 
+function ensureTestCatalogSeedData(mysqli $conn): void
+{
+    $seedTests = [
+        ['Complete Blood Count (CBC)', 'A comprehensive blood panel that evaluates your overall health and detects a wide range of disorders.', 'Laboratory', 'Blood', 50.00, 'Active'],
+        ['Lipid Panel', 'Measures the amount of cholesterol and other fats in your blood.', 'Laboratory', 'Blood', 75.50, 'Active'],
+        ['Creatinine', 'Urine', 'Laboratory', 'Urine', 10.00, 'Active'],
+        ['Creatinine 2.0', 'Blood urea level', 'Laboratory', 'Blood', 15.00, 'Active'],
+        ['Testosterone', 'level of hormone in blood', 'Laboratory', 'Blood', 500.00, 'Active'],
+        ['ECG', 'Electrocardiogram used to evaluate the electrical activity of the heart.', 'Cardiology', 'None', 300.00, 'Active'],
+        ['Echocardiogram', 'Ultrasound of the heart to evaluate structure and function.', 'Cardiology', 'None', 1200.00, 'Active'],
+        ['Chest X-Ray', 'Imaging test that captures the chest, lungs, heart, and bones.', 'Imaging', 'None', 800.00, 'Active'],
+        ['Urine Routine', 'Routine urine analysis for kidney and metabolic screening.', 'Laboratory', 'Urine', 120.00, 'Active'],
+        ['Random Blood Sugar', 'Measures current blood glucose level.', 'Laboratory', 'Blood', 80.00, 'Active'],
+        ['HbA1c', 'Reflects average blood glucose levels over the past 2 to 3 months.', 'Laboratory', 'Blood', 250.00, 'Active'],
+        ['Thyroid Profile', 'Panel used to assess thyroid hormone balance.', 'Laboratory', 'Blood', 650.00, 'Active'],
+        ['Ultrasound Abdomen', 'Imaging examination of abdominal organs.', 'Imaging', 'None', 1500.00, 'Active'],
+        ['C-Reactive Protein (CRP)', 'Marker used to detect inflammation in the blood.', 'Laboratory', 'Blood', 180.00, 'Active'],
+        ['Erythrocyte Sedimentation Rate (ESR)', 'Measures inflammation level in blood.', 'Laboratory', 'Blood', 160.00, 'Active'],
+        ['Dengue NS1 Antigen', 'Blood test used for early dengue detection.', 'Laboratory', 'Blood', 450.00, 'Active'],
+        ['COVID-19 PCR', 'Molecular swab test used to detect viral infection.', 'Laboratory', 'Swab', 1200.00, 'Active'],
+        ['Pap Smear', 'Cervical screening test for abnormal cells.', 'Laboratory', 'Swab', 700.00, 'Active'],
+        ['2D Echo', 'Ultrasound imaging of the heart chambers and valves.', 'Cardiology', 'None', 1800.00, 'Active'],
+        ['Treadmill Test (TMT)', 'Exercise stress test to assess heart performance.', 'Cardiology', 'None', 2200.00, 'Active'],
+        ['MRI Brain', 'Detailed imaging scan of the brain and nervous system.', 'Imaging', 'None', 4500.00, 'Active'],
+        ['CT Scan Abdomen', 'Cross-sectional imaging of abdominal organs.', 'Imaging', 'None', 5000.00, 'Active'],
+        ['Stool Routine', 'Routine stool analysis for digestive and infection screening.', 'Laboratory', 'Stool', 200.00, 'Active'],
+        ['Liver Function Test (LFT)', 'Panel used to assess liver enzymes and liver health.', 'Laboratory', 'Blood', 400.00, 'Active'],
+        ['Uric Acid', 'Measures uric acid levels in the blood.', 'Laboratory', 'Blood', 180.00, 'Active'],
+        ['Blood Culture', 'Identifies bacteria or fungus in the bloodstream.', 'Laboratory', 'Blood', 900.00, 'Active'],
+        ['HBsAg', 'Screening test for hepatitis B infection.', 'Laboratory', 'Blood', 500.00, 'Active'],
+        ['HCV Antibody', 'Screening test for hepatitis C infection.', 'Laboratory', 'Blood', 550.00, 'Active'],
+        ['Holter Monitoring', '24-hour heart rhythm monitoring test.', 'Cardiology', 'None', 2500.00, 'Active'],
+        ['Mammography', 'Breast imaging screening examination.', 'Imaging', 'None', 3500.00, 'Active'],
+        ['X-Ray KUB', 'Imaging of kidneys, ureters, and bladder.', 'Imaging', 'None', 900.00, 'Active'],
+    ];
+
+    $checkStmt = $conn->prepare('SELECT test_id FROM tests WHERE test_name = ? LIMIT 1');
+    $insertStmt = $conn->prepare('INSERT INTO tests (test_name, description, test_category, sample_requirement, price, status) VALUES (?, ?, ?, ?, ?, ?)');
+
+    foreach ($seedTests as $seedTest) {
+        [$name, $description, $category, $sampleRequirement, $price, $status] = $seedTest;
+
+        $checkStmt->bind_param('s', $name);
+        $checkStmt->execute();
+        $exists = $checkStmt->get_result();
+        if ($exists && $exists->num_rows > 0) {
+            continue;
+        }
+
+        $insertStmt->bind_param('ssssis', $name, $description, $category, $sampleRequirement, $price, $status);
+        $insertStmt->execute();
+    }
+
+    $checkStmt->close();
+    $insertStmt->close();
+}
+
 ensureUsersVerificationColumns($conn);
 ensurePaymentsTable($conn);
+ensureTechnicianAuthColumns($conn);
+ensureTestResultsColumns($conn);
 ensurePackageBookingColumns($conn);
 ensureRoomSchedulingTables($conn);
+ensureTestCatalogSeedData($conn);
 ?>

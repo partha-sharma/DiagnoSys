@@ -4,3 +4,9 @@ uploads/*.jpeg
 uploads/*.png
 uploads/*.webp
 uploads/*.gif
+assets/images/
+assets/images/*.jpg
+assets/images/*.jpeg
+assets/images/*.png
+assets/images/*.webp
+assets/images/*.gif
