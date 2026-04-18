@@ -33,7 +33,7 @@ function redirect($url, $message = null, $type = 'success') {
 function protect_patient_page() {
     // Check if user is logged in
     if (!isset($_SESSION['user_id'])) {
-        redirect('/DiagnoSys/login.php', 'You must be logged in to view this page.', 'error');
+        redirect('/DiagnoSys/auth/login.php', 'You must be logged in to view this page.', 'error');
     }
 
     // Check if the logged-in user is a patient
@@ -52,13 +52,13 @@ function protect_patient_page() {
 function protect_admin_page() {
     // Check if user is logged in
     if (!isset($_SESSION['user_id'])) {
-        redirect('/DiagnoSys/login.php', 'You must be logged in to view this page.', 'error');
+        redirect('/DiagnoSys/auth/login.php', 'You must be logged in to view this page.', 'error');
     }
 
     // Check if the logged-in user is an admin
     if ($_SESSION['user_role'] !== 'admin') {
         // If they are a patient, send them to their dashboard.
-        redirect('/DiagnoSys/dashboard.php', 'Access denied. You do not have admin privileges.', 'error');
+        redirect('/DiagnoSys/patient/dashboard.php', 'Access denied. You do not have admin privileges.', 'error');
     }
 }
 
@@ -75,7 +75,7 @@ function requireLogin() {
     if(!isLoggedIn()){
         // Save error in the format friend uses
         $_SESSION['errors'] = ["You must login to continue."];
-        redirect('login.php');
+        redirect('auth/login.php');
     }
 }
 
@@ -103,3 +103,4 @@ function alertMessage() {
     }
 }
 ?>
+

@@ -8,9 +8,10 @@
             <a href="index.php" class="text-gray-600 hover:text-blue-600">
                 Home
             </a>
-            <a href="login.php" class="text-gray-600 hover:text-blue-600">
+            <a href="auth/login.php" class="text-gray-600 hover:text-blue-600">
                 Login
             </a>
         </div>
     </div>
 </nav>
+

@@ -21,14 +21,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $test_name = trim($_POST['test_name']);
     $description = trim($_POST['description']);
     $price = (float)($_POST['price'] ?? 0);
+    $test_category = normalize_test_category($_POST['test_category'] ?? 'General');
+    $sample_requirement = normalize_sample_requirement($_POST['sample_requirement'] ?? 'None');
+
+    if (!isset($_POST['test_category']) || trim((string)$_POST['test_category']) === '') {
+        $test_category = infer_test_category_from_text($test_name, $description);
+    }
+    if (!isset($_POST['sample_requirement']) || trim((string)$_POST['sample_requirement']) === '') {
+        $sample_requirement = infer_sample_requirement_from_text($test_name, $description, $test_category);
+    }
 
     if ($test_name === '' || $price <= 0) {
         $_SESSION['error'] = 'Test name and valid price are required.';
         redirect_manage_tests();
     }
 
-    $stmt = $conn->prepare("INSERT INTO tests (test_name, description, price) VALUES (?, ?, ?)");
-    $stmt->bind_param("ssd", $test_name, $description, $price);
+    $stmt = $conn->prepare("INSERT INTO tests (test_name, description, test_category, sample_requirement, price) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("ssssd", $test_name, $description, $test_category, $sample_requirement, $price);
     if ($stmt->execute()) {
         $_SESSION['success'] = 'Test added successfully.';
     } else {
@@ -45,6 +54,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $description = trim($_POST['description'] ?? '');
     $price = (float)($_POST['price'] ?? 0);
     $status = trim($_POST['status'] ?? 'Active');
+    $test_category = normalize_test_category($_POST['test_category'] ?? 'General');
+    $sample_requirement = normalize_sample_requirement($_POST['sample_requirement'] ?? 'None');
+
+    if (!isset($_POST['test_category']) || trim((string)$_POST['test_category']) === '') {
+        $test_category = infer_test_category_from_text($test_name, $description);
+    }
+    if (!isset($_POST['sample_requirement']) || trim((string)$_POST['sample_requirement']) === '') {
+        $sample_requirement = infer_sample_requirement_from_text($test_name, $description, $test_category);
+    }
 
     if ($test_id <= 0 || $test_name === '' || $price <= 0) {
         $_SESSION['error'] = 'Please provide a valid test to update.';
@@ -55,8 +73,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $status = 'Active';
     }
 
-    $stmt = $conn->prepare('UPDATE tests SET test_name = ?, description = ?, price = ?, status = ? WHERE test_id = ?');
-    $stmt->bind_param('ssdsi', $test_name, $description, $price, $status, $test_id);
+    $stmt = $conn->prepare('UPDATE tests SET test_name = ?, description = ?, test_category = ?, sample_requirement = ?, price = ?, status = ? WHERE test_id = ?');
+    $stmt->bind_param('ssssdsi', $test_name, $description, $test_category, $sample_requirement, $price, $status, $test_id);
 
     if ($stmt->execute()) {
         $_SESSION['success'] = 'Test updated successfully.';

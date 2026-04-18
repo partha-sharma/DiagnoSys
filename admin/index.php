@@ -5,11 +5,11 @@ require_once '../config/init.php';
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     // If it's a patient trying to be sneaky, send them back to dashboard
     if (isset($_SESSION['role']) && $_SESSION['role'] === 'patient') {
-        header("Location: ../dashboard.php");
+        header("Location: ../patient/dashboard.php");
         exit();
     }
     // Otherwise send to login
-    header("Location: ../login.php");
+    header("Location: ../auth/login.php");
     exit();
 }
 
@@ -111,13 +111,14 @@ $recentPaymentsResult = mysqli_query($conn, $recentPaymentsSql);
         <a href="index.php">Dashboard</a>
         <a href="manage_tests.php">Manage Tests</a>
         <a href="appointments.php">Appointments</a>
+        <a href="test-results.php">Test Results</a>
         <a href="technicians.php">Technicians</a>
         <a href="packages.php">Packages</a>
         <a href="manage_rooms.php">Manage Rooms</a>
         <a href="finance.php">Finance</a>
         <a href="users.php">Patients List</a>
         <hr style="border-color: #334155; margin: 20px 0;">
-        <a href="../logout.php" class="sidebar-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        <a href="../auth/logout.php" class="sidebar-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
 
          
         
@@ -257,3 +258,4 @@ $recentPaymentsResult = mysqli_query($conn, $recentPaymentsSql);
 
 </body>
 </html>
+
