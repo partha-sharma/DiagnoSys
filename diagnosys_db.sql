@@ -160,6 +160,8 @@ CREATE TABLE `tests` (
   `test_id` int(11) NOT NULL,
   `test_name` varchar(100) NOT NULL,
   `description` text DEFAULT NULL,
+  `test_category` varchar(50) DEFAULT NULL,
+  `sample_requirement` varchar(30) DEFAULT NULL,
   `price` decimal(10,2) NOT NULL,
   `status` enum('Active','Inactive') DEFAULT 'Active'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -168,12 +170,38 @@ CREATE TABLE `tests` (
 -- Dumping data for table `tests`
 --
 
-INSERT INTO `tests` (`test_id`, `test_name`, `description`, `price`, `status`) VALUES
-(1, 'Complete Blood Count (CBC)', 'A comprehensive blood panel that evaluates your overall health and detects a wide range of disorders.', 50.00, 'Active'),
-(2, 'Lipid Panel', 'Measures the amount of cholesterol and other fats in your blood.', 75.50, 'Active'),
-(4, 'Creatinine', 'Urine', 10.00, 'Active'),
-(5, 'Creatinine 2.0', 'Blood urea level', 15.00, 'Active'),
-(6, 'Testosterone', 'level of hormone in blood', 500.00, 'Active');
+INSERT INTO `tests` (`test_id`, `test_name`, `description`, `test_category`, `sample_requirement`, `price`, `status`) VALUES
+(1, 'Complete Blood Count (CBC)', 'A comprehensive blood panel that evaluates your overall health and detects a wide range of disorders.', 'Laboratory', 'Blood', 50.00, 'Active'),
+(2, 'Lipid Panel', 'Measures the amount of cholesterol and other fats in your blood.', 'Laboratory', 'Blood', 75.50, 'Active'),
+(4, 'Creatinine', 'Urine', 'Laboratory', 'Urine', 10.00, 'Active'),
+(5, 'Creatinine 2.0', 'Blood urea level', 'Laboratory', 'Blood', 15.00, 'Active'),
+(6, 'Testosterone', 'level of hormone in blood', 'Laboratory', 'Blood', 500.00, 'Active'),
+(7, 'ECG', 'Electrocardiogram used to evaluate the electrical activity of the heart.', 'Cardiology', 'None', 300.00, 'Active'),
+(8, 'Echocardiogram', 'Ultrasound of the heart to evaluate structure and function.', 'Cardiology', 'None', 1200.00, 'Active'),
+(9, 'Chest X-Ray', 'Imaging test that captures the chest, lungs, heart, and bones.', 'Imaging', 'None', 800.00, 'Active'),
+(10, 'Urine Routine', 'Routine urine analysis for kidney and metabolic screening.', 'Laboratory', 'Urine', 120.00, 'Active'),
+(11, 'Random Blood Sugar', 'Measures current blood glucose level.', 'Laboratory', 'Blood', 80.00, 'Active'),
+(12, 'HbA1c', 'Reflects average blood glucose levels over the past 2 to 3 months.', 'Laboratory', 'Blood', 250.00, 'Active'),
+(13, 'Thyroid Profile', 'Panel used to assess thyroid hormone balance.', 'Laboratory', 'Blood', 650.00, 'Active'),
+(14, 'Ultrasound Abdomen', 'Imaging examination of abdominal organs.', 'Imaging', 'None', 1500.00, 'Active'),
+(15, 'C-Reactive Protein (CRP)', 'Marker used to detect inflammation in the blood.', 'Laboratory', 'Blood', 180.00, 'Active'),
+(16, 'Erythrocyte Sedimentation Rate (ESR)', 'Measures inflammation level in blood.', 'Laboratory', 'Blood', 160.00, 'Active'),
+(17, 'Dengue NS1 Antigen', 'Blood test used for early dengue detection.', 'Laboratory', 'Blood', 450.00, 'Active'),
+(18, 'COVID-19 PCR', 'Molecular swab test used to detect viral infection.', 'Laboratory', 'Swab', 1200.00, 'Active'),
+(19, 'Pap Smear', 'Cervical screening test for abnormal cells.', 'Laboratory', 'Swab', 700.00, 'Active'),
+(20, '2D Echo', 'Ultrasound imaging of the heart chambers and valves.', 'Cardiology', 'None', 1800.00, 'Active'),
+(21, 'Treadmill Test (TMT)', 'Exercise stress test to assess heart performance.', 'Cardiology', 'None', 2200.00, 'Active'),
+(22, 'MRI Brain', 'Detailed imaging scan of the brain and nervous system.', 'Imaging', 'None', 4500.00, 'Active'),
+(23, 'CT Scan Abdomen', 'Cross-sectional imaging of abdominal organs.', 'Imaging', 'None', 5000.00, 'Active'),
+(24, 'Stool Routine', 'Routine stool analysis for digestive and infection screening.', 'Laboratory', 'Stool', 200.00, 'Active'),
+(25, 'Liver Function Test (LFT)', 'Panel used to assess liver enzymes and liver health.', 'Laboratory', 'Blood', 400.00, 'Active'),
+(26, 'Uric Acid', 'Measures uric acid levels in the blood.', 'Laboratory', 'Blood', 180.00, 'Active'),
+(27, 'Blood Culture', 'Identifies bacteria or fungus in the bloodstream.', 'Laboratory', 'Blood', 900.00, 'Active'),
+(28, 'HBsAg', 'Screening test for hepatitis B infection.', 'Laboratory', 'Blood', 500.00, 'Active'),
+(29, 'HCV Antibody', 'Screening test for hepatitis C infection.', 'Laboratory', 'Blood', 550.00, 'Active'),
+(30, 'Holter Monitoring', '24-hour heart rhythm monitoring test.', 'Cardiology', 'None', 2500.00, 'Active'),
+(31, 'Mammography', 'Breast imaging screening examination.', 'Imaging', 'None', 3500.00, 'Active'),
+(32, 'X-Ray KUB', 'Imaging of kidneys, ureters, and bladder.', 'Imaging', 'None', 900.00, 'Active');
 
 -- --------------------------------------------------------
 
